@@ -12,7 +12,8 @@ servers:
       description: Production server
 
 
-# TODO: autenticazione SSO
+# TODO: login e registrazione SSO dopo aver capito come funziona...
+# TODO: Organizzare con tag
 paths:
     /login:
         summary: Login with credentials
@@ -154,6 +155,7 @@ paths:
                     description: The notification has been deleted
     /search:
         get:
+            summary: Get search results from a query
             parameters:
               - in: query
                 name: query
@@ -165,11 +167,16 @@ paths:
                 name: filter
                 required: false
                 schema:
-                    type: string
+                    type: array
                     description: The filter to apply to the search (eg. distance)
                     # TODO: Scrivere i filtri della ricerca che abbiamo implementato
-                    enum:
-                        -
+                    items:
+                        type: string
+                        enum:
+                        - A
+                        - B
+                        - C
+
             responses:
                 "200":
                     description: The search result list
@@ -177,6 +184,299 @@ paths:
                       application/json:
                         schema:
                             $ref: "#/components/schemas/SearchResults"
+
+    /shops/{shopID}/products:
+        parameters:
+          - in: path
+            name: shopID
+            required: true
+            schema:
+                type: integer
+                minimum: 0
+                description: The id of the shop whose products you want
+        get:
+            summary: Returns the list of products sold at a certain shop
+            responses:
+                "200":
+                    description: Returns the list of products
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Product"
+        post:
+            summary: Adds a product to the shop
+            security:
+              - BearerAuth: []
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Product"
+            responses:
+                "201":
+                    description: The product was added to the shop
+                "400":
+                    description: The product had some invalid data
+        
+
+    /shops/{shopID}/products/{productID}:
+        description: Operations on a single product
+        parameters:
+          - in: path
+            name: shopID
+            required: true
+            schema:
+                type: integer
+                minimum: 0
+                description: The ID of the shop
+          - in: path
+            name: productID
+            required: true
+            schema:
+                type: integer
+                minimum: 0
+                description: The ID of the product
+        get:
+            summary: Returns the details of single product
+            responses:
+                "404":
+                    description: "The product was not found"
+                "200":
+                    description: "The product details"
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Product"
+        
+        put:
+            summary: Modifies some attributes of a product
+            security:
+              - BearerAuth: []
+            requestBody:
+                content:
+                  application/json:
+                    schema:
+                        # Riscrivo lo schema del prodotto siccome non è obbligatorio
+                        # fornire tutti i campi e non è possibile cambiare ID
+                        type: object
+                        properties:
+                            name: 
+                                type: string
+                                description: Product name
+                            description:
+                                type: string
+                                description: Product description
+                            origin:
+                                type: string
+                                description: Product location of origin
+                            image:
+                                type: string
+                                description: URL of where to find the product image
+                            points:
+                                type: integer
+                                minimum: 0
+                                description: The number of points assigned on a purchase
+            responses:
+                "200":
+                    description: The edit was successful
+                "400":
+                    description: The new product attributes contain errors
+        
+        delete:
+            summary: Deletes a product
+            security:
+              - BearerAuth: []
+            responses:
+                "200":
+                    description: The product was deleted
+
+    /shops/{shopID}/prizes:
+        parameters:
+          - in: path
+            name: shopID
+            required: true
+            schema:
+                type: integer
+                minimum: 0
+                description: The id of the shop whose prizes you want
+        get:
+            summary: Returns the list of prizes sold at a certain shop
+            responses:
+                "200":
+                    description: Returns the list of prizes
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Prize"
+        post:
+            summary: Adds a prizes to the shop
+            security:
+              - BearerAuth: []
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Prize"
+            responses:
+                "201":
+                    description: The prize was added to the shop
+                "400":
+                    description: The prize had some invalid data
+        
+
+    /shops/{shopID}/prizes/{prizeID}:
+        description: Operations on a single prize
+        parameters:
+          - in: path
+            name: shopID
+            required: true
+            schema:
+                type: integer
+                minimum: 0
+                description: The ID of the shop
+          - in: path
+            name: prizeID
+            required: true
+            schema:
+                type: integer
+                minimum: 0
+                description: The ID of the prize
+        get:
+            summary: Returns the details of single prize
+            responses:
+                "404":
+                    description: "The prize was not found"
+                "200":
+                    description: "The prize details"
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Prize"
+        
+        put:
+            summary: Modifies some attributes of a prize
+            security:
+              - BearerAuth: []
+            requestBody:
+                content:
+                  application/json:
+                    schema:
+                        # Riscrivo lo schema del premio siccome non è obbligatorio
+                        # fornire tutti i campi e non è possibile cambiare ID
+                        type: object
+                        properties:
+                            name: 
+                                type: string
+                                description: Prize name
+                            description:
+                                type: string
+                                description: Prize description
+                            image:
+                                type: string
+                                description: URL of where to find the prize image
+                            points:
+                                type: integer
+                                minimum: 1
+                                description: The number of points required to redeem the prize
+            responses:
+                "200":
+                    description: The edit was successful
+                "400":
+                    description: The new prize attributes contain errors
+        
+        delete:
+            summary: Deletes a prize
+            security:
+              - BearerAuth: []
+            responses:
+                "200":
+                    description: The prize was deleted
+
+    /QRCodes/assignPoints:
+        get:
+            summary: Generates a QR with which a merchant can assign points to a user
+            security:
+                - BearerAuth: []
+            requestBody:
+                # Prodotti acquistati
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                type: object
+                                properties:
+                                    productID:
+                                        type: integer
+                                        minimum: 0
+                                        description: The ID of the purchased product
+                                    quantity:
+                                        type: integer
+                                        minimum: 1
+                                        description: The quantity of the single product that was purchased
+                                required:
+                                    - productID
+                                    - quantity
+            responses:
+                "401":
+                    description: The user is not logged in, so it cannot generate
+                "200":
+                    description: The QR code is generated
+                    content:
+                        image/jpeg:
+                            schema:
+                                type: string
+                                format: binary
+
+    /QRCodes/redeemPrize:
+        get:
+            summary: Generates a QR with which a user can redeem a prize
+            security:
+                - BearerAuth: []
+            requestBody:
+                # Prodotti acquistati
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                prizeID:
+                                    type: integer
+                                    minimum: 0
+                                    description: The id of the prize to redeem
+                            required:
+                                - prizeID
+
+            responses:
+                "401":
+                    description: The user is not logged in, so it cannot generate
+                "200":
+                    description: The QR code is generated
+                    content:
+                        image/jpeg:
+                            schema:
+                                type: string
+                                format: binary
+    /QRCodes/scanned:
+        post:
+            summary: After scanning a QR code, send the data to processing
+            security:
+              - BearerAuth: []
+            requestBody:
+                content:
+                    image/jpeg:
+                        schema:
+                            type: string
+                            format: binary
+            responses:
+                "200":
+                    description: The QR code was processed successfully
+                "400":
+                    description: The QR code is invalid
 
 components:
     securitySchemes:
@@ -248,6 +548,7 @@ components:
                 pointAmmount:
                     type: integer
                     description: The point amount involved in the transaction
+                    minimum: 1
                 notificationMessage:
                     type: string
                     description: An optional message to display in the notification (eg. when a new offer is out)
@@ -257,9 +558,12 @@ components:
                 - receiver
                 - viewed
                 - notificationType
-        Products:
+        Product:
             type: object
             properties:
+                id:
+                    type: integer
+                    description: The id of the product
                 name:
                     type: string
                     description: The name of the product
@@ -274,6 +578,7 @@ components:
                     description: The URL path of the image of the product
                 points:
                     type: integer
+                    minimum: 0
                     description: The number of points assigned to the client when this product is bought
             required:
                 - name
@@ -291,4 +596,30 @@ components:
                 products:
                     type: array
                     items:
-                        $ref: "#/components/schemas/Products"
+                        $ref: "#/components/schemas/Product"
+
+        Prize:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    minimum: 0
+                    description: The id of the prize
+                name: 
+                    type: string
+                    description: The name of the prize
+                description:
+                    type: string
+                    description: The description of the prize
+                image:
+                    type: string
+                    description: The URL of the image of the prize
+                points:
+                    type: integer
+                    minimum: 1
+                    description: The number of points necessary to redeem the prize
+            required:
+              - name
+              - description
+              - image
+              - points
