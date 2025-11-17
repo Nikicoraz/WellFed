@@ -11,8 +11,7 @@
   "keywords": [],
   "type": "module",
   "author": "Federico Brusadin, Nicola Corato, Manuel Mollis",
-  "license": "ISC",
-  "packageManager": "pnpm@10.20.0",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "@types/express": "^5.0.5",
     "express": "^5.1.0",

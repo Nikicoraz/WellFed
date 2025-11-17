@@ -1,0 +1,294 @@
+openapi: 3.0.0
+info:
+    version: '1.0'
+    title: "WellFed OpenAPI 3.0"
+    description: API for WellFed.
+    license:
+        name: MIT
+servers:
+    - url: http://localhost:8000/api/v1
+      description: Local development server
+    - url: https://changeme.server/api/v1
+      description: Production server
+
+
+# TODO: autenticazione SSO
+paths:
+    /login:
+        summary: Login with credentials
+        post:
+            summary: Send the login request
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                email:
+                                    type: string
+                                    description: Email of the user trying to login
+                                password:
+                                    type: string
+                                    description: The *hashed* password of the user
+            responses:
+                "401":
+                    description: Invalid credentials
+                "200":
+                    description: User logged in successfully
+                    headers:
+                        'Location':
+                            description: Link to the default page for the user
+                            schema:
+                                type: string
+    /register/client:
+        summary: Register a client type user
+        post:
+            summary: Send a registration request for a client type user
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                username:
+                                    type: string
+                                    description: Username of the user
+                                email:
+                                    type: string
+                                    description: Email of the user
+                                password:
+                                    type: string
+                                    description: The **hashed** password of the user
+            responses:
+                "409":
+                    description: The email is already in use
+                "201":
+                    # Non serve location header siccome sappiamo che si è registrato un cliente,
+                    # e quindi sappiamo anche la sua landing page
+                    description: Account created successfully
+    
+    /register/merchant:
+        # Merchant guild rise up
+        summary: Register a merchant type user
+        post:
+            summary: Send a registration request for the merchant type user
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Merchant"
+            responses:
+                "409":
+                    description: Name or email already in use
+                "403":
+                    description: Validation of Partita IVA failed
+                "202":
+                    description: Request accepted for manual verification
+    
+    /shops:
+        summary: The registered shops
+        get:
+            summary: Returns a list of registered shops
+            responses:
+                "200":
+                    description: A JSON array of shops
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Shop"
+    
+    /notifications:
+        get:
+            summary: Get the list of notifications of the authenticated user
+            security:
+                - BearerAuth: []
+            responses:
+                "401":
+                    description: The user is not logged in
+                "200":
+                    description: The list of notifications for the user
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Notification"
+
+    /notifications/{notificationID}:
+        put:
+            summary: Set a notification status to read
+            security:
+                - BearerAuth: []
+            parameters:
+              - in: path
+                name: notificationID
+                required: true
+                schema:
+                    type: integer
+                    minimum: 0
+                description: The notification ID to mark as read
+            responses:
+                "401":
+                    description: The user is not logged in or cannot access the notification
+                "200":
+                    description: The notification has been marked as read
+
+        delete:
+            summary: Delete a notification
+            security:
+                - BearerAuth: []
+            parameters:
+              - in: path
+                name: notificationID
+                required: true
+                schema:
+                    type: integer
+                    minimum: 0
+                description: The notification ID to delete
+            responses:
+                "401":
+                    description: The user is not logged in or cannot access the notification
+                "200":
+                    description: The notification has been deleted
+    /search:
+        get:
+            parameters:
+              - in: query
+                name: query
+                required: false
+                schema:
+                    type: string
+                    description: The text query to search for a shop or product
+              - in: query
+                name: filter
+                required: false
+                schema:
+                    type: string
+                    description: The filter to apply to the search (eg. distance)
+                    # TODO: Scrivere i filtri della ricerca che abbiamo implementato
+                    enum:
+                        -
+            responses:
+                "200":
+                    description: The search result list
+                    content:
+                      application/json:
+                        schema:
+                            $ref: "#/components/schemas/SearchResults"
+
+components:
+    securitySchemes:
+      BearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+
+    schemas:
+        Shop:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: ID of the shop
+                name:
+                    type: string
+                    description: Name of the shop
+                image:
+                    type: string
+                    description: Public path of the shop banner image
+            required:
+                - id
+                - name
+        Merchant:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: The name of the merchant's shop
+                partitaIVA:
+                    type: string
+                    description: The Partita IVA of the merchant
+                address:
+                    type: string
+                    description: The shop address
+                email:
+                    type: string
+                    description: The email address of the merchant
+                password:
+                    type: string
+                    description: The hashed password to access the merchant's account
+            required:
+                - name
+                - partitaIVA
+                - address
+                - email
+                - password
+        Notification:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    description: The notification id
+                issuer:
+                    type: string
+                    description: The link to the transaction issuer (eg. /merchant/1)
+                receiver:
+                    type: string
+                    description: The link to the transaction receiver (eg. /client/1)
+                viewed:
+                    type: boolean
+                    description: If the user has already opened and read the notification
+                notificationType:
+                    type: string
+                    enum:
+                    - Transaction
+                    - Offer
+                pointAmmount:
+                    type: integer
+                    description: The point amount involved in the transaction
+                notificationMessage:
+                    type: string
+                    description: An optional message to display in the notification (eg. when a new offer is out)
+            required:
+                - id
+                - issuer
+                - receiver
+                - viewed
+                - notificationType
+        Products:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: The name of the product
+                description:
+                    type: string
+                    description: The description of the product
+                origin:
+                    type: string
+                    description: The place of origin of the product
+                image:
+                    type: string
+                    description: The URL path of the image of the product
+                points:
+                    type: integer
+                    description: The number of points assigned to the client when this product is bought
+            required:
+                - name
+                - description
+                - origin
+                - image
+
+        SearchResults:
+            type: object
+            properties:
+                shops:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Shop"
+                products:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Products"
