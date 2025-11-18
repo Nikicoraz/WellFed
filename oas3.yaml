@@ -11,6 +11,15 @@ servers:
     - url: https://changeme.server/api/v1
       description: Production server
 
+tags:
+  - name: User Actions
+    description: Actions made by the user
+  - name: Shop
+    description: Operations regarding the shop
+  - name: Notification
+    description: Operations regarding the notifications
+  - name: QRCode
+    description: Operations made with QRCodes
 
 # TODO: login e registrazione SSO dopo aver capito come funziona...
 # TODO: Organizzare con tag
@@ -19,6 +28,8 @@ paths:
         summary: Login with credentials
         post:
             summary: Send the login request
+            tags:
+              - User Actions
             requestBody:
                 content:
                     application/json:
@@ -44,6 +55,8 @@ paths:
     /register/client:
         summary: Register a client type user
         post:
+            tags:
+              - User Actions
             summary: Send a registration request for a client type user
             requestBody:
                 content:
@@ -72,6 +85,8 @@ paths:
         # Merchant guild rise up
         summary: Register a merchant type user
         post:
+            tags:
+              - User Actions
             summary: Send a registration request for the merchant type user
             requestBody:
                 content:
@@ -89,6 +104,8 @@ paths:
     /shops:
         summary: The registered shops
         get:
+            tags:
+              - Shop
             summary: Returns a list of registered shops
             responses:
                 "200":
@@ -103,6 +120,8 @@ paths:
     /notifications:
         get:
             summary: Get the list of notifications of the authenticated user
+            tags:
+              - Notification
             security:
                 - BearerAuth: []
             responses:
@@ -120,6 +139,8 @@ paths:
     /notifications/{notificationID}:
         put:
             summary: Set a notification status to read
+            tags:
+              - Notification
             security:
                 - BearerAuth: []
             parameters:
@@ -138,6 +159,8 @@ paths:
 
         delete:
             summary: Delete a notification
+            tags:
+              - Notification
             security:
                 - BearerAuth: []
             parameters:
@@ -156,6 +179,8 @@ paths:
     /search:
         get:
             summary: Get search results from a query
+            tags:
+              - User Actions
             parameters:
               - in: query
                 name: query
@@ -164,11 +189,11 @@ paths:
                     type: string
                     description: The text query to search for a shop or product
               - in: query
-                name: filter
+                name: filters
                 required: false
                 schema:
                     type: array
-                    description: The filter to apply to the search (eg. distance)
+                    description: The filters to apply to the search (eg. distance)
                     # TODO: Scrivere i filtri della ricerca che abbiamo implementato
                     items:
                         type: string
@@ -196,6 +221,8 @@ paths:
                 description: The id of the shop whose products you want
         get:
             summary: Returns the list of products sold at a certain shop
+            tags:
+              - Shop
             responses:
                 "200":
                     description: Returns the list of products
@@ -207,6 +234,8 @@ paths:
                                     $ref: "#/components/schemas/Product"
         post:
             summary: Adds a product to the shop
+            tags:
+              - Shop
             security:
               - BearerAuth: []
             requestBody:
@@ -240,6 +269,8 @@ paths:
                 description: The ID of the product
         get:
             summary: Returns the details of single product
+            tags:
+              - Shop
             responses:
                 "404":
                     description: "The product was not found"
@@ -252,6 +283,8 @@ paths:
         
         put:
             summary: Modifies some attributes of a product
+            tags:
+              - Shop
             security:
               - BearerAuth: []
             requestBody:
@@ -286,6 +319,8 @@ paths:
         
         delete:
             summary: Deletes a product
+            tags:
+              - Shop
             security:
               - BearerAuth: []
             responses:
@@ -303,6 +338,8 @@ paths:
                 description: The id of the shop whose prizes you want
         get:
             summary: Returns the list of prizes sold at a certain shop
+            tags:
+              - Shop
             responses:
                 "200":
                     description: Returns the list of prizes
@@ -314,6 +351,8 @@ paths:
                                     $ref: "#/components/schemas/Prize"
         post:
             summary: Adds a prizes to the shop
+            tags:
+              - Shop
             security:
               - BearerAuth: []
             requestBody:
@@ -347,6 +386,8 @@ paths:
                 description: The ID of the prize
         get:
             summary: Returns the details of single prize
+            tags:
+              - Shop
             responses:
                 "404":
                     description: "The prize was not found"
@@ -359,6 +400,8 @@ paths:
         
         put:
             summary: Modifies some attributes of a prize
+            tags:
+              - Shop
             security:
               - BearerAuth: []
             requestBody:
@@ -390,6 +433,8 @@ paths:
         
         delete:
             summary: Deletes a prize
+            tags:
+              - Shop
             security:
               - BearerAuth: []
             responses:
@@ -399,6 +444,8 @@ paths:
     /QRCodes/assignPoints:
         get:
             summary: Generates a QR with which a merchant can assign points to a user
+            tags:
+              - QRCode
             security:
                 - BearerAuth: []
             requestBody:
@@ -435,6 +482,8 @@ paths:
     /QRCodes/redeemPrize:
         get:
             summary: Generates a QR with which a user can redeem a prize
+            tags:
+              - QRCode
             security:
                 - BearerAuth: []
             requestBody:
@@ -464,6 +513,8 @@ paths:
     /QRCodes/scanned:
         post:
             summary: After scanning a QR code, send the data to processing
+            tags:
+              - QRCode
             security:
               - BearerAuth: []
             requestBody:
