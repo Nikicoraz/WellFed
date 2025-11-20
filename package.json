@@ -4,8 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "npm run lint && node server.ts",
-    "dev": "nodemon --watch server.ts --exec \"npm run lint && node server.ts\"",
+    "start": "npm run lint && node src/server.ts",
+    "dev": "nodemon --watch server.ts --exec \"npm run lint && node src/server.ts\"",
+    "build": "tsc -b",
     "lint": "eslint"
   },
   "keywords": [],

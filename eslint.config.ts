@@ -4,8 +4,10 @@ import tseslint from "typescript-eslint";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
+  {
+    ignores: ["**/node_modules/**", "eslint.config.ts", "**/dist/**"],
+  },
   { files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
-    ignores: ["**/node_modules/**", "eslint.config.ts"],
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.node },
@@ -24,8 +26,8 @@ export default defineConfig([
       'sort-imports': 'warn',
       'require-await': 'error',
       'no-undefined': 'error',
-    }
-},
+    },
+  },
   tseslint.configs.recommended,
 ]);
 
