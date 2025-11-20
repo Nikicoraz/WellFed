@@ -22,7 +22,6 @@ tags:
     description: Operations made with QRCodes
 
 # TODO: login e registrazione SSO dopo aver capito come funziona...
-# TODO: Organizzare con tag
 paths:
     /login:
         summary: Login with credentials
@@ -39,9 +38,11 @@ paths:
                                 email:
                                     type: string
                                     description: Email of the user trying to login
+                                    example: "mariorossi@gmail.com"
                                 password:
                                     type: string
                                     description: The *hashed* password of the user
+                                    example: a883dafc480d466ee04e0d6da986bd78eb1fdd2178d04693723da3a8f95d42f4
             responses:
                 "401":
                     description: Invalid credentials
@@ -67,12 +68,15 @@ paths:
                                 username:
                                     type: string
                                     description: Username of the user
+                                    example: "MRossi"
                                 email:
                                     type: string
                                     description: Email of the user
+                                    example: "mariorossi@gmail.com"
                                 password:
                                     type: string
                                     description: The **hashed** password of the user
+                                    example: "a883dafc480d466ee04e0d6da986bd78eb1fdd2178d04693723da3a8f95d42f4"
             responses:
                 "409":
                     description: The email is already in use
@@ -298,19 +302,24 @@ paths:
                             name: 
                                 type: string
                                 description: Product name
+                                example: Ciliegie
                             description:
                                 type: string
                                 description: Product description
+                                example: Delle ciliegie provenienti dal mio orto
                             origin:
                                 type: string
                                 description: Product location of origin
+                                example: Il mio orto
                             image:
                                 type: string
                                 description: URL of where to find the product image
+                                example: /public/img/22006f1b2ad92b54295.png
                             points:
                                 type: integer
                                 minimum: 0
                                 description: The number of points assigned on a purchase
+                                example: 5
             responses:
                 "200":
                     description: The edit was successful
@@ -415,16 +424,22 @@ paths:
                             name: 
                                 type: string
                                 description: Prize name
+                                example: Cestino natale 1
                             description:
                                 type: string
                                 description: Prize description
+                                example: >
+                                    Un piccolo cestino di natale contenente polenta,
+                                    un salame, qualche formaggio e della pasta
                             image:
                                 type: string
                                 description: URL of where to find the prize image
+                                example: /public/img/32106f1b2ad92b54295.png
                             points:
                                 type: integer
                                 minimum: 1
                                 description: The number of points required to redeem the prize
+                                example: 40
             responses:
                 "200":
                     description: The edit was successful
@@ -546,9 +561,11 @@ components:
                 name:
                     type: string
                     description: Name of the shop
+                    example: "Gianni & Co"
                 image:
                     type: string
                     description: Public path of the shop banner image
+                    example: "/public/img/a22a571b4df0db2b46.png"
             required:
                 - id
                 - name
@@ -558,18 +575,23 @@ components:
                 name:
                     type: string
                     description: The name of the merchant's shop
+                    example: "Luca Bianchi"
                 partitaIVA:
                     type: string
                     description: The Partita IVA of the merchant
+                    example: "12345678901"
                 address:
                     type: string
                     description: The shop address
+                    example: "Via Sommarive, 5, 38123 Trento TN"
                 email:
                     type: string
                     description: The email address of the merchant
+                    example: "l.bianchi@gmail.com"
                 password:
                     type: string
                     description: The hashed password to access the merchant's account
+                    example: "6b3a55e0261b0304143f805a24924d0c1c44524821305f31d9277843b8a10f4e"
             required:
                 - name
                 - partitaIVA
@@ -579,23 +601,30 @@ components:
         Notification:
             type: object
             properties:
+                # TODO: Sistemare il campo issuer e receiver:
+                # O metto un campo enum per dire che se l'issuer/receiver è un 
+                # commerciante/cliente, oppure faccio un API endpoint, il quale però
+                # non sarebbe molto sicuro visto che per vedere l'username di un 
+                # utente a caso basterebbe fare /client/xyz
                 id:
                     type: integer
                     description: The notification id
                 issuer:
                     type: string
                     description: The link to the transaction issuer (eg. /merchant/1)
+                    example: /merchant/1
                 receiver:
                     type: string
                     description: The link to the transaction receiver (eg. /client/1)
+                    example: /client/1
                 viewed:
                     type: boolean
                     description: If the user has already opened and read the notification
                 notificationType:
                     type: string
                     enum:
-                    - Transaction
-                    - Offer
+                      - Transaction
+                      - Offer
                 pointAmmount:
                     type: integer
                     description: The point amount involved in the transaction
@@ -603,6 +632,7 @@ components:
                 notificationMessage:
                     type: string
                     description: An optional message to display in the notification (eg. when a new offer is out)
+                    example: Transazione di 120 punti avvenuta con successo in data 03/12/25 alle 15:28 presso il negozio “Gianni & Co.”.
             required:
                 - id
                 - issuer
@@ -618,19 +648,24 @@ components:
                 name:
                     type: string
                     description: The name of the product
+                    example: Ciliegie
                 description:
                     type: string
                     description: The description of the product
+                    example: Delle ciliegie provenienti dal mio orto
                 origin:
                     type: string
                     description: The place of origin of the product
+                    example: Il mio orto
                 image:
                     type: string
                     description: The URL path of the image of the product
+                    example: /public/img/22006f1b2ad92b54295.png
                 points:
                     type: integer
                     minimum: 0
                     description: The number of points assigned to the client when this product is bought
+                    example: 5
             required:
                 - name
                 - description
@@ -659,16 +694,22 @@ components:
                 name: 
                     type: string
                     description: The name of the prize
+                    example: Cestino natale 1
                 description:
                     type: string
                     description: The description of the prize
+                    example: >
+                            Un piccolo cestino di natale contenente polenta, un salame, qualche formaggio
+                            e della pasta
                 image:
                     type: string
                     description: The URL of the image of the prize
+                    example: /public/img/32106f1b2ad92b54295.png
                 points:
                     type: integer
                     minimum: 1
                     description: The number of points necessary to redeem the prize
+                    example: 40
             required:
               - name
               - description
