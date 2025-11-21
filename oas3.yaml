@@ -20,6 +20,8 @@ tags:
     description: Operations regarding the notifications
   - name: QRCode
     description: Operations made with QRCodes
+  - name: Transaction
+    description: Operations made with transactions
 
 # TODO: login e registrazione SSO dopo aver capito come funziona...
 paths:
@@ -120,6 +122,22 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/Shop"
+
+    /shops/{shopID}:
+        summary: Opration on a single shop
+        get:
+            tags:
+                - Shop
+            summary: Get the shop details
+            responses:
+                "404":
+                    description: Shop not found
+                "200":
+                    description: The details of the shop
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Shop"
     
     /notifications:
         get:
@@ -543,6 +561,88 @@ paths:
                     description: The QR code was processed successfully
                 "400":
                     description: The QR code is invalid
+    
+    /transactions:
+        get:
+            summary: Get all the transactions for a user
+            security:
+              - BearerAuth: []
+            tags:
+              - Transaction
+            responses:
+                "200":
+                    description: An array of transactions
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        issuerID:
+                                            type: object
+                                            description: The the issuer properties
+                                            properties:
+                                                id: 
+                                                    type: integer
+                                                    description: the ID of the issuer
+                                                type:
+                                                    type: string
+                                                    description: The user type of the issuer
+                                                    enum: 
+                                                      - client
+                                                      - merchant
+                                            required:
+                                              - id
+                                              - type
+                                        receiverID:
+                                            type: object
+                                            description: The the receiver properties
+                                            properties:
+                                                id: 
+                                                    type: integer
+                                                    description: the ID of the receiver
+                                                type:
+                                                    type: string
+                                                    description: The user type of the receiver
+                                                    enum: 
+                                                      - client
+                                                      - merchant
+                                                    example: merchant
+                                            required:
+                                              - id
+                                              - type
+                                        points:
+                                            type: integer
+                                            description: The number of points involved in the transaction
+                                            minimum: 1
+                                        transactionType:
+                                            type: string
+                                            description: The transaction type
+                                            enum:
+                                              - PointAssignment
+                                              - PrizeRedeem
+                                        transactionStatus:
+                                            type: string
+                                            description: The status of the transaction
+                                            enum:
+                                              - Success
+                                              - Insuccess
+                                        items:
+                                            type: array
+                                            items:
+                                                type: string
+                                                description: The urls of the items
+                                                example: "/shop/1/products/5"
+
+                                    required:
+                                      - issuerID
+                                      - receiverID
+                                      - points
+                                      - transactionType
+                                      - transactionStatus
+                                      - items
+
 
 components:
     securitySchemes:
@@ -562,6 +662,10 @@ components:
                     type: string
                     description: Name of the shop
                     example: "Gianni & Co"
+                address:
+                    type: string
+                    description: The address of the shop
+                    example: "Via Sommarive, 5, 38123 Trento TN"
                 image:
                     type: string
                     description: Public path of the shop banner image
@@ -601,44 +705,25 @@ components:
         Notification:
             type: object
             properties:
-                # TODO: Sistemare il campo issuer e receiver:
-                # O metto un campo enum per dire che se l'issuer/receiver è un 
-                # commerciante/cliente, oppure faccio un API endpoint, il quale però
-                # non sarebbe molto sicuro visto che per vedere l'username di un 
-                # utente a caso basterebbe fare /client/xyz
                 id:
                     type: integer
                     description: The notification id
-                issuer:
+                shopLink:
                     type: string
-                    description: The link to the transaction issuer (eg. /merchant/1)
-                    example: /merchant/1
-                receiver:
-                    type: string
-                    description: The link to the transaction receiver (eg. /client/1)
-                    example: /client/1
+                    description: The link to the shop issuer
+                    example: /shop/1
                 viewed:
                     type: boolean
                     description: If the user has already opened and read the notification
-                notificationType:
-                    type: string
-                    enum:
-                      - Transaction
-                      - Offer
-                pointAmmount:
-                    type: integer
-                    description: The point amount involved in the transaction
-                    minimum: 1
                 notificationMessage:
                     type: string
                     description: An optional message to display in the notification (eg. when a new offer is out)
-                    example: Transazione di 120 punti avvenuta con successo in data 03/12/25 alle 15:28 presso il negozio “Gianni & Co.”.
+                    example: C'è un nuovo premio disponibile presso Gianni & Co.
             required:
                 - id
-                - issuer
-                - receiver
+                - shopLink
                 - viewed
-                - notificationType
+                - notificationMessage
         Product:
             type: object
             properties:
