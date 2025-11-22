@@ -575,75 +575,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: array
-                                items:
-                                    type: object
-                                    properties:
-                                        issuerID:
-                                            type: object
-                                            description: The the issuer properties
-                                            properties:
-                                                id: 
-                                                    type: integer
-                                                    description: the ID of the issuer
-                                                type:
-                                                    type: string
-                                                    description: The user type of the issuer
-                                                    enum: 
-                                                      - client
-                                                      - merchant
-                                            required:
-                                              - id
-                                              - type
-                                        receiverID:
-                                            type: object
-                                            description: The the receiver properties
-                                            properties:
-                                                id: 
-                                                    type: integer
-                                                    description: the ID of the receiver
-                                                type:
-                                                    type: string
-                                                    description: The user type of the receiver
-                                                    enum: 
-                                                      - client
-                                                      - merchant
-                                                    example: merchant
-                                            required:
-                                              - id
-                                              - type
-                                        points:
-                                            type: integer
-                                            description: The number of points involved in the transaction
-                                            minimum: 1
-                                        transactionType:
-                                            type: string
-                                            description: The transaction type
-                                            enum:
-                                              - PointAssignment
-                                              - PrizeRedeem
-                                        transactionStatus:
-                                            type: string
-                                            description: The status of the transaction
-                                            enum:
-                                              - Success
-                                              - Insuccess
-                                        items:
-                                            type: array
-                                            items:
-                                                type: string
-                                                description: The urls of the items
-                                                example: "/shop/1/products/5"
-
-                                    required:
-                                      - issuerID
-                                      - receiverID
-                                      - points
-                                      - transactionType
-                                      - transactionStatus
-                                      - items
-
-
+                                $ref: "#/components/schemas/Transaction"
 components:
     securitySchemes:
       BearerAuth:
@@ -800,3 +732,77 @@ components:
               - description
               - image
               - points
+        Transaction:
+            type: array
+            items:
+                type: object
+                properties:
+                    issuerID:
+                        type: object
+                        description: The the issuer properties
+                        properties:
+                            id: 
+                                type: integer
+                                description: the ID of the issuer
+                            type:
+                                type: string
+                                description: The user type of the issuer
+                                enum: 
+                                    - client
+                                    - merchant
+                        required:
+                            - id
+                            - type
+                    receiverID:
+                        type: object
+                        description: The the receiver properties
+                        properties:
+                            id: 
+                                type: integer
+                                description: the ID of the receiver
+                            type:
+                                type: string
+                                description: The user type of the receiver
+                                enum: 
+                                    - client
+                                    - merchant
+                                example: merchant
+                        required:
+                            - id
+                            - type
+                    points:
+                        type: integer
+                        description: The number of points involved in the transaction
+                        minimum: 1
+                    transactionType:
+                        type: string
+                        description: The transaction type
+                        enum:
+                            - PointAssignment
+                            - PrizeRedeem
+                    transactionStatus:
+                        type: string
+                        description: The status of the transaction
+                        enum:
+                            - Success
+                            - Insuccess
+                    items:
+                        type: object
+                        properties:
+                            products:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Product"
+                            prizes:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Prize"
+
+                required:
+                    - issuerID
+                    - receiverID
+                    - points
+                    - transactionType
+                    - transactionStatus
+                    - items
+
