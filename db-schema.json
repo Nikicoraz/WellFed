@@ -1,0 +1,76 @@
+{
+    "users": {
+        "client": [
+            {
+                "username": "mrossi",
+                "password": "hash",
+                "email": "mariorossi@gmail.com",
+                "SSO": false,
+                "favouriteShops": [1, 2, ...],
+                "points": {
+                    // Id dello shop
+                    1: 40,
+                    2: 60,
+                    6: 10,
+                    ...
+                }
+            },
+        ],
+        "merchant": [
+            {
+                "shopName": "BioFrutta",
+                "IVA": "123467859",
+                "address": "Via dei tigli, 10",
+                "password": "hash",
+                "email": "pippoplutonio@g.com",
+                "image": "/public/img/1239812903u1204.jpg",
+                "products": [
+                    1, 2, 3, 4, ...
+                ],
+                "prizes": [
+                    1, 2, 3, 4, ...
+                ]
+            },
+        ]
+    },
+
+    "items": {
+        "product": [
+            {
+                "name": "Ciliegie",
+                "description": "Ciliegie del mio orto",
+                "origin": "Il mio orto",
+                "image": "/public/img/12u301274.jpg",
+                "points": 10
+            }
+        ],
+        "prizes": [
+            {
+                "name": "Cesto di natale",
+                "description": "Un cesto con formaggio",
+                "image": "/public/img/12u301275.jpg",
+                "points": 100
+            }
+        ]
+    },
+
+    "alerts": {
+        "transaction": {
+            "issuer": 1,
+            "receiver": 5,
+            "points": 215,
+            "type": "PointTransaction",
+            "status": "success",
+            "items": {
+                "products": [1, 2, 3, ...],
+                "prizes": []
+            }
+        },
+        "notification": {
+            "shop": 2,
+            "client": 7,
+            "description": "NUOVE CILIEGIE IN OFFERTA A SOLI 500 $/g",
+            "read": false
+        }
+    }
+}
