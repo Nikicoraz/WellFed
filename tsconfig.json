@@ -35,5 +35,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "exclude": ["eslint**", "node_modules", "dist"]
+  "exclude": ["eslint*", "node_modules", "dist"]
 }
