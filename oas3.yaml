@@ -159,7 +159,7 @@ paths:
                                     $ref: "#/components/schemas/Notification"
 
     /notifications/{notificationID}:
-        put:
+        patch:
             summary: Set a notification status to read
             tags:
               - Notification
@@ -303,7 +303,7 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Product"
         
-        put:
+        patch:
             summary: Modifies some attributes of a product
             tags:
               - Shop
@@ -425,7 +425,7 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Prize"
         
-        put:
+        patch:
             summary: Modifies some attributes of a prize
             tags:
               - Shop
