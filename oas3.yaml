@@ -792,11 +792,13 @@ components:
                             products:
                                 type: array
                                 items:
-                                    $ref: "#/components/schemas/Product"
+                                    type: integer
+                                    description: ID of the products
                             prizes:
                                 type: array
                                 items:
-                                    $ref: "#/components/schemas/Prize"
+                                    type: integer
+                                    description: ID of the prizes
 
                 required:
                     - issuerID
