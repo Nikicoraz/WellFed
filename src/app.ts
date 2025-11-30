@@ -1,4 +1,3 @@
-import "dotenv/config";
 import cors from 'cors';
 import express from "express";
 import helloExample from "./hello_world_example.js";

@@ -1,7 +1,12 @@
+import "dotenv/config";
 import app from './src/app.js';
+import mongoose from 'mongoose';
+
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
+app.locals.db = mongoose.connect(`mongodb://${process.env.DB_USER!}:${process.env.DB_PASSWORD!}@${process.env.DB_URL!}:27017`).then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server listening on http://localhost:${PORT}`);
+    });
 });
