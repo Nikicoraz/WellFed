@@ -6,7 +6,7 @@ info:
     license:
         name: MIT
 servers:
-    - url: http://localhost:8000/api/v1
+    - url: http://127.0.0.1:8000/api/v1
       description: Local development server
     - url: https://changeme.server/api/v1
       description: Production server
@@ -82,6 +82,8 @@ paths:
             responses:
                 "409":
                     description: The email is already in use
+                "400":
+                    description: The input data is not valid
                 "201":
                     # Non serve location header siccome sappiamo che si è registrato un cliente,
                     # e quindi sappiamo anche la sua landing page
@@ -104,6 +106,8 @@ paths:
                     description: Name or email already in use
                 "403":
                     description: Validation of Partita IVA failed
+                "400":
+                    description: Input data is invalid
                 "202":
                     description: Request accepted for manual verification
     
