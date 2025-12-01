@@ -5,5 +5,18 @@ export default mongoose.model("Merchant", new Schema({
     partitaIVA: String,
     address: String,
     email: String,
-    password: String
+    password: String,
+    image: String,
+    products: [ 
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Product",
+        } 
+    ],
+    prizes: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Prize",
+        } 
+    ]
 }), "Merchants");
