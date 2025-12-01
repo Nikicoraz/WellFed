@@ -13,7 +13,7 @@ app.use(cors());
 
 // Hello example is protected by authentication
 app.use("/api/v1/register/", registration);
-app.use("/api/v1/login", login);
+app.use("/api/v1/login/", login);
 
 // all protected API from here
 app.use(tokenChecker);

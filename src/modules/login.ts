@@ -9,7 +9,7 @@ const router = express.Router();
 const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
 const tokenOptions: SignOptions = {expiresIn: 86400};
 
-router.post('', async(req, res) => {
+router.post("", async(req, res) => {
     try{
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
