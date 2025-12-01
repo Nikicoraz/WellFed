@@ -10,11 +10,11 @@ const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
 const tokenOptions: SignOptions = {expiresIn: 86400};
 
 router.post("", async(req, res) => {
-    try{
+    try {
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
 
-        if(!email.match(simpleEmailRegex) || password == "") {
+        if (!email.match(simpleEmailRegex) || password == "") {
             res.sendStatus(401);
             return;
         }
@@ -22,8 +22,8 @@ router.post("", async(req, res) => {
         let user;
         let payload: JwtCustomPayload | null = null;
         let autenticated = false;
-        if((user = await Client.findOne({email: email}).exec())) {
-            if(await argon.verify(user.password!, password)) {
+        if ((user = await Client.findOne({email: email}).exec())) {
+            if (await argon.verify(user.password!, password)) {
                 payload = {
                     id: user._id,
                     email: user.email!,
@@ -33,8 +33,8 @@ router.post("", async(req, res) => {
                 res.location("/");
                 autenticated = true;
             }
-        }else if((user = await Merchant.findOne({email: email}).exec())) {
-            if(await argon.verify(user.password!, password)) {
+        } else if ((user = await Merchant.findOne({email: email}).exec())) {
+            if (await argon.verify(user.password!, password)) {
                 payload = {
                     id: user._id,
                     email: user.email!,
@@ -46,7 +46,7 @@ router.post("", async(req, res) => {
             }
         }
 
-        if(!autenticated) {
+        if (!autenticated) {
             res.sendStatus(401);
             return;
         }
@@ -54,11 +54,11 @@ router.post("", async(req, res) => {
         const token = jwt.sign(payload!, process.env.PRIVATE_KEY!, tokenOptions);
 
         res.json({token: token}).send();
-    }catch (e) {
+    } catch (e) {
         console.log(e);
-        if(e instanceof TypeError) {
+        if (e instanceof TypeError) {
             res.sendStatus(401);
-        }else{
+        } else {
             res.sendStatus(500);
         }
     }

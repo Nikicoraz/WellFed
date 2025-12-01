@@ -26,6 +26,7 @@ export default defineConfig([
       'sort-imports': 'warn',
       'require-await': 'error',
       'no-undefined': 'error',
+      'keyword-spacing': ["warn", { "before": true, "after": true}]
     },
   },
   tseslint.configs.recommended,

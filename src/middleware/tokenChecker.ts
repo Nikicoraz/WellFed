@@ -14,21 +14,21 @@ export interface JwtCustomPayload extends JwtPayload{
 }
 
 const tokenChecker = (req: express.Request, res: express.Response, next: () => void) =>{
-    if(!req.headers.authorization) {
+    if (!req.headers.authorization) {
         return res.sendStatus(401);
     }
 
     // Rimozione della parte iniziale del token
     const token = req.headers.authorization.split("Bearer ")[1];
 
-    if(!token) {
+    if (!token) {
         return res.sendStatus(401);
     }
 
     jwt.verify(token, process.env.PRIVATE_KEY!, (err, dec) =>{
         if (err) {
             return res.sendStatus(401);
-        }else{
+        } else {
             // Eventuale set di parametri
             (req as AuthenticatedRequest).user = dec as JwtCustomPayload;
             next();
