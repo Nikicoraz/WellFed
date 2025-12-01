@@ -34,6 +34,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "removeComments": true,
   },
   "exclude": ["eslint*", "node_modules", "dist"]
 }
