@@ -1,5 +1,6 @@
 import jwt, { type SignOptions } from "jsonwebtoken";
 import Client from "../models/client.js";
+import type { JwtCustomPayload } from "../middleware/tokenChecker.js";
 import Merchant from "../models/merchant.js";
 import argon from "argon2";
 import express from 'express';
@@ -19,14 +20,15 @@ router.post('', async(req, res) => {
         }
 
         let user;
-        let payload = {};
+        let payload: JwtCustomPayload | null = null;
         let autenticated = false;
         if((user = await Client.findOne({email: email}).exec())) {
             if(await argon.verify(user.password!, password)) {
                 payload = {
                     id: user._id,
-                    email: user.email,
-                    username: user.username
+                    email: user.email!,
+                    username: user.username!,
+                    client: true
                 };
                 res.location("/");
                 autenticated = true;
@@ -35,8 +37,9 @@ router.post('', async(req, res) => {
             if(await argon.verify(user.password!, password)) {
                 payload = {
                     id: user._id,
-                    email: user.email,
-                    username: user.name
+                    email: user.email!,
+                    username: user.name!,
+                    client: false
                 };
                 res.location("/shop/" + user._id);
                 autenticated = true;
@@ -48,10 +51,11 @@ router.post('', async(req, res) => {
             return;
         }
 
-        const token = jwt.sign(payload, process.env.PRIVATE_KEY!, tokenOptions);
+        const token = jwt.sign(payload!, process.env.PRIVATE_KEY!, tokenOptions);
 
         res.json({token: token}).send();
     }catch (e) {
+        console.log(e);
         if(e instanceof TypeError) {
             res.sendStatus(401);
         }else{
