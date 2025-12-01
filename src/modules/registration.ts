@@ -1,5 +1,6 @@
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
+import argon from "argon2";
 import express from 'express';
 
 const router = express.Router();
@@ -13,13 +14,16 @@ router.post("/client", async(req, res) => {
         const password: string = req.body.password.trim();
     
         if(username != "" && email.match(simpleEmailRegex) && password != "") {
+            const hashedPassword = await argon.hash(password);
+
             const client = new Client({
                 username: username,
-                password: password,
+                password: hashedPassword,
                 email: email
             });
     
-            if((await Client.find({username: username}).exec()).length == 0) {
+            if(  (await Client.find({email: email}).exec()).length == 0 &&
+                 (await Client.find({username: username}).exec()).length == 0) {
                 await client.save();
                 res.sendStatus(201);
             }else{
@@ -58,17 +62,18 @@ router.post("/merchant", async(req, res) => {
             return;
         }
 
-        if((await Merchant.find({name: name}).exec()).length > 0) {
+        if((await Merchant.find({name: name}).exec()).length > 0 || (await Merchant.find({email: email}).exec()).length > 0) {
             res.sendStatus(409);
             return;
         }
 
+        const hashedPassword = await argon.hash(password);
         const newMerchant = new Merchant({
             name: name,
             partitaIVA: partitaIVA,
             address: address,
             email: email,
-            password: password
+            password: hashedPassword
         });
 
         await newMerchant.save();

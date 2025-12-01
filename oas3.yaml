@@ -43,13 +43,21 @@ paths:
                                     example: "mariorossi@gmail.com"
                                 password:
                                     type: string
-                                    description: The *hashed* password of the user
-                                    example: a883dafc480d466ee04e0d6da986bd78eb1fdd2178d04693723da3a8f95d42f4
+                                    description: The cleartext password of the user
+                                    example: password123
             responses:
                 "401":
                     description: Invalid credentials
                 "200":
                     description: User logged in successfully
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    token:
+                                        type: string
+                                        description: The JWT token
                     headers:
                         'Location':
                             description: Link to the default page for the user
@@ -77,8 +85,8 @@ paths:
                                     example: "mariorossi@gmail.com"
                                 password:
                                     type: string
-                                    description: The **hashed** password of the user
-                                    example: "a883dafc480d466ee04e0d6da986bd78eb1fdd2178d04693723da3a8f95d42f4"
+                                    description: The cleartext password of the user
+                                    example: password123
             responses:
                 "409":
                     description: The email is already in use
@@ -630,8 +638,8 @@ components:
                     example: "l.bianchi@gmail.com"
                 password:
                     type: string
-                    description: The hashed password to access the merchant's account
-                    example: "6b3a55e0261b0304143f805a24924d0c1c44524821305f31d9277843b8a10f4e"
+                    description: The cleartext password to access the merchant's account
+                    example: "bestshopever"
             required:
                 - name
                 - partitaIVA
