@@ -25,10 +25,9 @@ router.get("", async(req, res) => {
 });
 
 
-router.get(":id", async (req, res) => {
+router.get("/:id", async (req, res) => {
     try {
         const shop = await Merchant.findById(req.params.id).exec();
-
         if (!shop) {
             res.sendStatus(404);
             return;
@@ -49,3 +48,5 @@ router.get(":id", async (req, res) => {
         }
     }
 });
+
+export default router;

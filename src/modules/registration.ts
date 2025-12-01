@@ -22,7 +22,7 @@ router.post("/client", async(req, res) => {
                 email: email
             });
     
-            if (  (await Client.find({email: email}).exec()).length == 0 &&
+            if ((await Client.find({email: email}).exec()).length == 0 &&
                  (await Client.find({username: username}).exec()).length == 0) {
                 await client.save();
                 res.sendStatus(201);
