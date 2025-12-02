@@ -250,8 +250,7 @@ paths:
             name: shopID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string 
                 description: The id of the shop whose products you want
         get:
             summary: Returns the list of products sold at a certain shop
@@ -267,6 +266,8 @@ paths:
                                 items:
                                     $ref: "#/components/schemas/Product"
         post:
+            # TODO: Le immagini inviate dall'utente non possono essere stringhe
+            # TODO: Cambiare gli id da Integer a String
             summary: Adds a product to the shop
             tags:
               - Shop
