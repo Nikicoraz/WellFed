@@ -103,4 +103,32 @@ router.post("/redeemPrize", clientOnly, (req, res) => {
     }
 });
 
+router.post("/scanned", (req, res) => {
+    try {
+        const authReq = req as AuthenticatedRequest;
+
+        const token: string = req.body.trim();
+        const payload = jwt.verify(token, process.env.PRIVATE_KEY!);
+        const qrPayload = payload as QR;
+        if (qrPayload.type == QRTypes.Assignment && authReq.user.client) {
+            // TODO: Assegna punti all'utente
+            const clientID = authReq.user.id;
+            const shopID = (qrPayload as AssignmentQR).shopID;
+            const points = (qrPayload as AssignmentQR).totalPoints;
+        } else if (qrPayload.type == QRTypes.Redeem && !authReq.user.client) {
+            // TODO: Controlla se il prize appartiene all'utente autenticato e scala i punti all'utente
+            const shopID = authReq.user.id;
+            const clientID = (qrPayload as RedeemQR).clientID;
+            const prizeID = (qrPayload as RedeemQR).prizeID;
+        }else {
+            return res.sendStatus(400);
+        }
+
+        res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
+        res.sendStatus(400);
+    }
+});
+
 export default router;

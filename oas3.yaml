@@ -512,6 +512,8 @@ paths:
                                     - productID
                                     - quantity
             responses:
+                "400":
+                    description: Data is invalid
                 "401":
                     description: The user is not logged in, so it cannot generate
                 "200":
@@ -543,6 +545,8 @@ paths:
                                 - prizeID
 
             responses:
+                "400":
+                    description: Data is invalid
                 "401":
                     description: The user is not logged in, so it cannot generate
                 "200":
@@ -571,6 +575,8 @@ paths:
                     description: The QR code was processed successfully
                 "400":
                     description: The QR code is invalid
+                "401":
+                    description: The user is not authenticated
     
     /transactions:
         get:
