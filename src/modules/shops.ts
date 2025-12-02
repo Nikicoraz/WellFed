@@ -1,6 +1,7 @@
 import Merchant from "../models/merchant.js";
 import Product from "../models/product.js";
 import express from "express";
+import uploadImage from "../middleware/uploadImage.js";
 
 const router = express.Router();
 
@@ -88,30 +89,34 @@ router.get("/:id/products", async (req, res) => {
     }
 });
 
-router.post("/:id/products", async (req, res) => {
+router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
     try {
         const name: string = req.body.name.trim();
         const description: string = req.body.description.trim();
         const origin: string = req.body.origin.trim();
-        const image: string = req.body.image.trim();
 
-        let points: number;
-        try {
+        let points: number = 0;
+        if (req.body.points) {
             points = parseInt(req.body.points.trim());
-        } catch {
-            points = 0;
         }
 
-        if (name == "" || description == "" || origin == "" || !image) {
+        if (name == "" || description == "" || origin == "") {
             res.sendStatus(400);
             return;
         }
+
+        const uploadedImage = req.file;
+        if (!uploadedImage) {
+            return res.status(400);
+        }
+
+        const imagePath: string = "/public/images/".concat(uploadedImage.filename);
 
         const newProduct = new Product({
             name: name,
             description: description,
             origin: origin,
-            image: image,
+            image: imagePath,
             points: points,
         });
 
