@@ -60,25 +60,27 @@ router.get("/:id/products", async (req, res) => {
             return;
         }
 
-        const products = shop.products;
-        res.json(products.map(async (productRef) => {
-            const product = await Product.findById(productRef).exec();
-            
-            if (!product) {
-                res.sendStatus(400);
-                return;
-            }
+        const productPromises = shop.products.map((productRef) => {
+            return Product.findById(productRef).exec();
+        });
 
-            return {
-                id: product._id.toString(),
-                name: product.name,
-                description: product.description,
-                origin: product.origin,
-                image: product.image,
-                points: product.points
-            };
-        }));
+        const resolvedProducts = await Promise.all(productPromises);        
 
+        res.json(resolvedProducts
+            .filter((product) => {
+                return product !== null;    
+            })
+            .map((product) => {
+                return {
+                    id: product._id.toString(), // Usa '!' o controllo per Type safety in TS
+                    name: product.name,
+                    description: product.description,
+                    origin: product.origin,
+                    image: product.image,
+                    points: product.points
+                };
+            })
+        );
     } catch (e) {
         console.log(e);
         if (e instanceof TypeError) {
@@ -121,11 +123,17 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
         });
 
         await newProduct.save();
+
+        const newProductId = newProduct._id;
+        console.log(newProductId);
+        await Merchant.findByIdAndUpdate(req.params.id, { $push: { products: newProductId } }).exec();
+
         res.sendStatus(201);
 
     } catch (e) {
         console.log(e);
         if (e instanceof TypeError) {
+            console.log("qua");
             res.sendStatus(400);
         } else {
             res.sendStatus(500);

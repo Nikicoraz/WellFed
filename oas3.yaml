@@ -109,6 +109,7 @@ paths:
                     application/json:
                         schema:
                             $ref: "#/components/schemas/Merchant"
+                    
             responses:
                 "409":
                     description: Name or email already in use
@@ -265,9 +266,9 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/Product"
+        # TODO: Le immagini inviate dall'utente non possono essere stringhe
+        # TODO: Cambiare gli id da Integer a String
         post:
-            # TODO: Le immagini inviate dall'utente non possono essere stringhe
-            # TODO: Cambiare gli id da Integer a String
             summary: Adds a product to the shop
             tags:
               - Shop
@@ -275,9 +276,42 @@ paths:
               - BearerAuth: []
             requestBody:
                 content:
-                    application/json:
+                    multipart/form-data:
                         schema:
-                            $ref: "#/components/schemas/Product"
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    description: The name of the product
+                                    example: Ciliegie
+                                description:
+                                    type: string
+                                    description: The description of the product
+                                    example: Delle ciliegie provenienti dal mio orto
+                                origin:
+                                    type: string
+                                    description: The place of origin of the product
+                                    example: Il mio orto
+                                points:
+                                    type: integer
+                                    minimum: 0
+                                    description: The number of points assigned to the client when this product is bought
+                                    example: 5
+                                
+                                # File dell'immagine (inviato come campo file)
+                                image:
+                                    type: string
+                                    format: binary
+                                    description: The product image file
+                            required:
+                                - name
+                                - description
+                                - origin
+                                - image
+                    image/jpeg:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "201":
                     description: The product was added to the shop

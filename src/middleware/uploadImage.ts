@@ -1,11 +1,15 @@
+import { fileURLToPath } from 'url';
 import multer from "multer";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const uploadImage = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
-            const uploadDir = path.join(__dirname, "..", "..", "public", "images");
+            const uploadDir = path.join(__dirname, "..", "..", "..", "public", "images");
             cb(null, uploadDir);
         },
         filename: (req, file, cb) => {
