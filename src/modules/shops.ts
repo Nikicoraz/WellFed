@@ -94,6 +94,7 @@ router.get("/:id/products", async (req, res) => {
 
 router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
     try {
+        const uploadedImage = req.file;
         const name: string = req.body.name.trim();
         const description: string = req.body.description.trim();
         const origin: string = req.body.origin.trim();
@@ -103,15 +104,18 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
             points = req.body.points;
         }
 
-        if (name == "" || description == "" || origin == "") {
+        // Controllo per vedere se e' stata caricata un'immagine
+        if (!uploadedImage) {
             res.sendStatus(400);
             return;
         }
 
-        const uploadedImage = req.file;
-        if (!uploadedImage) {
-            return res.status(400);
+        if (name == "" || description == "" || origin == "") {
+            res.sendStatus(400);
+            await deleteImage(uploadedImage.filename);
+            return;
         }
+
 
         const imagePath: string = uploadedImage.filename;
 
@@ -180,17 +184,27 @@ router.get("/:shopId/products/:productId", async (req, res) => {
     }
 });
 
-router.patch("/:shopId/products/:productId", async (req, res) => {
+router.patch("/:shopId/products/:productId", uploadImage.single('image'), async (req, res) => {
     try {
-        const { shopId, productId } = req.params;
+        const uploadedImage = req.file;
+        const rollbackImageUpload = async () => {
+            if (uploadedImage) {
+                await deleteImage(uploadedImage.filename);
+            }
+        };
+    
+        const shopId = req.params.shopId!;
+        const productId = req.params.productId!;
 
         const shop = await Merchant.findOne({ 
-            _id: shopId, 
+            _id: shopId,
             products: productId 
         }).exec();
 
         if (!shop) {
-            return res.sendStatus(404);
+            res.sendStatus(404);
+            rollbackImageUpload();
+            return;
         }
 
         const updateFields: Record<string, unknown> = {};
@@ -199,6 +213,7 @@ router.patch("/:shopId/products/:productId", async (req, res) => {
             const name: string = req.body.name.trim();
             if (name == "") {
                 res.sendStatus(400);
+                rollbackImageUpload();
                 return;
             }
             updateFields["name"] = name;
@@ -208,6 +223,7 @@ router.patch("/:shopId/products/:productId", async (req, res) => {
             const description: string = req.body.description.trim();
             if (description == "") {
                 res.sendStatus(400);
+                rollbackImageUpload();
                 return;
             }
             updateFields["description"] = description;
@@ -217,6 +233,7 @@ router.patch("/:shopId/products/:productId", async (req, res) => {
             const origin: string = req.body.origin.trim();
             if (origin == "") {
                 res.sendStatus(400);
+                rollbackImageUpload();
                 return;
             }
             updateFields["origin"] = origin;
@@ -226,6 +243,7 @@ router.patch("/:shopId/products/:productId", async (req, res) => {
             const description: string = req.body.description.trim();
             if (description == "") {
                 res.sendStatus(400);
+                rollbackImageUpload();
                 return;
             }
             updateFields["description"] = description;
@@ -237,15 +255,31 @@ router.patch("/:shopId/products/:productId", async (req, res) => {
         }
 
         // Se non ci sono campi da aggiornare
-        if (Object.keys(updateFields).length === 0) {
+        if (Object.keys(updateFields).length === 0 && !uploadedImage) {
             res.sendStatus(400);
+            rollbackImageUpload();
             return;
         }
 
-        await Product.findByIdAndUpdate(
+        const updatedProduct = await Product.findByIdAndUpdate(
             productId,
-            { $set: updateFields }
+            { $set: updateFields },
+            { new: true }
         ).exec();
+
+        if (!updatedProduct) {
+            rollbackImageUpload();
+        } else {
+            if (uploadedImage) {
+                // Bisogna cancellare l'immagine vecchia
+                if (updatedProduct.image) {
+                    await deleteImage(updatedProduct.image);
+                }
+                updatedProduct.image = uploadedImage.filename;
+            }
+
+            updatedProduct.save();
+        }
 
         res.sendStatus(200);
     } catch (e) {
@@ -268,7 +302,6 @@ router.delete("/:shopId/products/:productId", async (req, res) => {
         }).exec();
 
         if (!shop) {
-            // Non so che errore dare
             res.sendStatus(404);
             return;
         }
@@ -276,7 +309,6 @@ router.delete("/:shopId/products/:productId", async (req, res) => {
         const product = await Product.findById(productId);
 
         if (!product) {
-            // Non so che errore dare
             res.sendStatus(404);
             return;
         }
@@ -296,7 +328,6 @@ router.delete("/:shopId/products/:productId", async (req, res) => {
         }).exec();
 
         res.sendStatus(200);
-
     } catch (e) {
         console.log(e);
         if (e instanceof TypeError) {

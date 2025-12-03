@@ -363,7 +363,7 @@ paths:
               - BearerAuth: []
             requestBody:
                 content:
-                  application/json:
+                  multipart/form-data:
                     schema:
                         # Riscrivo lo schema del prodotto siccome non è obbligatorio
                         # fornire tutti i campi e non è possibile cambiare ID
@@ -383,8 +383,8 @@ paths:
                                 example: Il mio orto
                             image:
                                 type: string
-                                description: URL of where to find the product image
-                                example: /public/img/22006f1b2ad92b54295.png
+                                format: binary
+                                description: The product image file
                             points:
                                 type: integer
                                 minimum: 0
