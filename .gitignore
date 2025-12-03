@@ -2,6 +2,7 @@ node_modules
 *-lock.*
 .env
 dist
+public
 
 .vscode/*
 !.vscode/extensions.json

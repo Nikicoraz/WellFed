@@ -3,7 +3,7 @@ import Client from "../models/client.js";
 import type { JwtCustomPayload } from "../middleware/tokenChecker.js";
 import Merchant from "../models/merchant.js";
 import argon from "argon2";
-import express from 'express';
+import express from "express";
 
 const router = express.Router();
 const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;

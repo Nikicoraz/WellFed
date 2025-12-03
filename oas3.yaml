@@ -109,6 +109,7 @@ paths:
                     application/json:
                         schema:
                             $ref: "#/components/schemas/Merchant"
+                    
             responses:
                 "409":
                     description: Name or email already in use
@@ -137,6 +138,13 @@ paths:
 
     /shops/{shopID}:
         summary: Opration on a single shop
+        parameters:
+          - in: path
+            name: shopID
+            required: true
+            schema:
+                type: string 
+                description: The id of the shop whose details you want
         get:
             tags:
                 - Shop
@@ -250,8 +258,7 @@ paths:
             name: shopID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string 
                 description: The id of the shop whose products you want
         get:
             summary: Returns the list of products sold at a certain shop
@@ -266,6 +273,8 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/Product"
+        # TODO: Le immagini inviate dall'utente non possono essere stringhe
+        # TODO: Cambiare gli id da Integer a String
         post:
             summary: Adds a product to the shop
             tags:
@@ -274,9 +283,42 @@ paths:
               - BearerAuth: []
             requestBody:
                 content:
-                    application/json:
+                    multipart/form-data:
                         schema:
-                            $ref: "#/components/schemas/Product"
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    description: The name of the product
+                                    example: Ciliegie
+                                description:
+                                    type: string
+                                    description: The description of the product
+                                    example: Delle ciliegie provenienti dal mio orto
+                                origin:
+                                    type: string
+                                    description: The place of origin of the product
+                                    example: Il mio orto
+                                points:
+                                    type: integer
+                                    minimum: 0
+                                    description: The number of points assigned to the client when this product is bought
+                                    example: 5
+                                
+                                # File dell'immagine (inviato come campo file)
+                                image:
+                                    type: string
+                                    format: binary
+                                    description: The product image file
+                            required:
+                                - name
+                                - description
+                                - origin
+                                - image
+                    image/jpeg:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "201":
                     description: The product was added to the shop
@@ -291,15 +333,13 @@ paths:
             name: shopID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string
                 description: The ID of the shop
           - in: path
             name: productID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string
                 description: The ID of the product
         get:
             summary: Returns the details of single product
@@ -323,7 +363,7 @@ paths:
               - BearerAuth: []
             requestBody:
                 content:
-                  application/json:
+                  multipart/form-data:
                     schema:
                         # Riscrivo lo schema del prodotto siccome non è obbligatorio
                         # fornire tutti i campi e non è possibile cambiare ID
@@ -343,8 +383,8 @@ paths:
                                 example: Il mio orto
                             image:
                                 type: string
-                                description: URL of where to find the product image
-                                example: /public/img/22006f1b2ad92b54295.png
+                                format: binary
+                                description: The product image file
                             points:
                                 type: integer
                                 minimum: 0
