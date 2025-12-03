@@ -1,5 +1,6 @@
 import Merchant from "../models/merchant.js";
 import Product from "../models/product.js";
+import deleteImage from "../middleware/deleteImage.js";
 import express from "express";
 import uploadImage from "../middleware/uploadImage.js";
 
@@ -99,7 +100,7 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
 
         let points: number = 0;
         if (req.body.points) {
-            points = parseInt(req.body.points.trim());
+            points = req.body.points;
         }
 
         if (name == "" || description == "" || origin == "") {
@@ -112,7 +113,7 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
             return res.status(400);
         }
 
-        const imagePath: string = "/public/images/".concat(uploadedImage.filename);
+        const imagePath: string = uploadedImage.filename;
 
         const newProduct = new Product({
             name: name,
@@ -133,7 +134,172 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
     } catch (e) {
         console.log(e);
         if (e instanceof TypeError) {
-            console.log("qua");
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.get("/:shopId/products/:productId", async (req, res) => {
+    try {
+        const { shopId, productId } = req.params;
+
+        const shop = await Merchant.findOne({
+            _id: shopId,
+            products: productId
+        }).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const product = await Product.findById(productId).exec();
+
+        if (!product) {
+            res.sendStatus(404);
+            return;
+        }
+
+        res.json({
+            id: product._id.toString(),
+            name: product.name,
+            description: product.description,
+            origin: product.origin,
+            image: product.image,
+            points: product.points
+        });
+    } catch (e) {
+        console.log(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.patch("/:shopId/products/:productId", async (req, res) => {
+    try {
+        const { shopId, productId } = req.params;
+
+        const shop = await Merchant.findOne({ 
+            _id: shopId, 
+            products: productId 
+        }).exec();
+
+        if (!shop) {
+            return res.sendStatus(404);
+        }
+
+        const updateFields: Record<string, unknown> = {};
+        
+        if (req.body.name) {
+            const name: string = req.body.name.trim();
+            if (name == "") {
+                res.sendStatus(400);
+                return;
+            }
+            updateFields["name"] = name;
+        }
+
+        if (req.body.description) {
+            const description: string = req.body.description.trim();
+            if (description == "") {
+                res.sendStatus(400);
+                return;
+            }
+            updateFields["description"] = description;
+        }
+
+        if (req.body.origin) {
+            const origin: string = req.body.origin.trim();
+            if (origin == "") {
+                res.sendStatus(400);
+                return;
+            }
+            updateFields["origin"] = origin;
+        }
+
+        if (req.body.description) {
+            const description: string = req.body.description.trim();
+            if (description == "") {
+                res.sendStatus(400);
+                return;
+            }
+            updateFields["description"] = description;
+        }
+        
+        if (req.body.points) {
+            const points: number = req.body.points;
+            updateFields["points"] = points;
+        }
+
+        // Se non ci sono campi da aggiornare
+        if (Object.keys(updateFields).length === 0) {
+            res.sendStatus(400);
+            return;
+        }
+
+        await Product.findByIdAndUpdate(
+            productId,
+            { $set: updateFields }
+        ).exec();
+
+        res.sendStatus(200);
+    } catch (e) {
+        console.log(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.delete("/:shopId/products/:productId", async (req, res) => {
+    try {
+        const { shopId, productId } = req.params;
+
+        const shop = await Merchant.findOne({ 
+            _id: shopId, 
+            products: productId 
+        }).exec();
+
+        if (!shop) {
+            // Non so che errore dare
+            res.sendStatus(404);
+            return;
+        }
+
+        const product = await Product.findById(productId);
+
+        if (!product) {
+            // Non so che errore dare
+            res.sendStatus(404);
+            return;
+        }
+
+        if (product.image) {
+            await deleteImage(product.image);
+        }
+
+        await product.deleteOne().exec();
+        await Merchant.updateOne({ 
+            _id: shopId,
+            products: productId 
+        }, { 
+            $pull: { 
+                products: productId 
+            }
+        }).exec();
+
+        res.sendStatus(200);
+
+    } catch (e) {
+        console.log(e);
+        if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
             res.sendStatus(500);

@@ -138,6 +138,13 @@ paths:
 
     /shops/{shopID}:
         summary: Opration on a single shop
+        parameters:
+          - in: path
+            name: shopID
+            required: true
+            schema:
+                type: string 
+                description: The id of the shop whose details you want
         get:
             tags:
                 - Shop
@@ -326,15 +333,13 @@ paths:
             name: shopID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string
                 description: The ID of the shop
           - in: path
             name: productID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string
                 description: The ID of the product
         get:
             summary: Returns the details of single product
