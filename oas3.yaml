@@ -24,6 +24,7 @@ tags:
     description: Operations made with transactions
 
 # TODO: login e registrazione SSO dopo aver capito come funziona...
+# TODO: Cambia formato esempio ritorno stringhe su tipo /shop/id/product/
 paths:
     /login:
         summary: Login with credentials
@@ -609,9 +610,12 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: string
-                            format: token
-                            example: Token
+                            type: object
+                            properties:
+                                token:
+                                    type: string
+                                    format: token
+                                    example: Token
             responses:
                 "200":
                     description: The QR code was processed successfully

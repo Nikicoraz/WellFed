@@ -1,4 +1,7 @@
 import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
+import Client from "../models/client.js";
+import Merchant from "../models/merchant.js";
+import Prize from "../models/prize.js";
 import Product from "../models/product.js";
 import type { Types } from "mongoose";
 import clientOnly from "../middleware/clientOnly.js";
@@ -22,6 +25,8 @@ interface AssignObject {
 interface QR {
     type: QRTypes
 }
+
+// TODO: Trovare un modo per limitare a 1 la scansione dei QR (punti utente campo?????)
 
 class AssignmentQR implements QR {
     type: QRTypes;
@@ -57,10 +62,9 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
         let pointsSum = 0;
     
         for (const e of array) {
-            // TODO: Controlla se i prodotti sono del commerciante che emana la richiesta
             const product = await Product.findById(e.productID);
             if (product) {
-                pointsSum += product.points ?? 0;
+                pointsSum += (product.points ?? 0) * e.quantity;
             }
         }
     
@@ -103,24 +107,86 @@ router.post("/redeemPrize", clientOnly, (req, res) => {
     }
 });
 
-router.post("/scanned", (req, res) => {
+router.post("/scanned", async(req, res) => {
     try {
         const authReq = req as AuthenticatedRequest;
 
-        const token: string = req.body.trim();
+        const token: string = req.body.token.trim();
         const payload = jwt.verify(token, process.env.PRIVATE_KEY!);
         const qrPayload = payload as QR;
+
         if (qrPayload.type == QRTypes.Assignment && authReq.user.client) {
-            // TODO: Assegna punti all'utente
             const clientID = authReq.user.id;
+            const productList: Types.ObjectId[] = (qrPayload as AssignmentQR).productQuantityList.map((e) => {
+                return e.productID;
+            });
+
             const shopID = (qrPayload as AssignmentQR).shopID;
             const points = (qrPayload as AssignmentQR).totalPoints;
+
+            const shop = await Merchant.findOne({
+                _id: shopID,
+                products: {$all: productList}
+            });
+
+            // Se non sono presenti tutti i prodotti della richiesta nel negozio del mercante
+            // allora il QR non è valido
+            if (!shop) {
+                res.sendStatus(400);
+                return;
+            }
+
+
+            const client = await Client.findById(clientID);
+            if (!client) {
+                // ID falso
+                res.sendStatus(400);
+                return;
+            }
+            const pointsString = `points.${shopID}`;
+            const oldPoints: number = client.get(pointsString) || 0;
+            client.set(pointsString, oldPoints + points);
+            client.save();
+
+            // Update finished
+
         } else if (qrPayload.type == QRTypes.Redeem && !authReq.user.client) {
-            // TODO: Controlla se il prize appartiene all'utente autenticato e scala i punti all'utente
             const shopID = authReq.user.id;
             const clientID = (qrPayload as RedeemQR).clientID;
             const prizeID = (qrPayload as RedeemQR).prizeID;
-        }else {
+
+            const shop = await Merchant.findOne({
+                _id: shopID,
+                prizes: prizeID
+            });
+
+            // Nel caso lo shop non abbia il premio
+            if (!shop) {
+                res.sendStatus(400);
+                return;
+            }
+
+            const prize = await Prize.findById(prizeID);
+            if (!prize) {
+                // What???
+                res.sendStatus(400);
+                return;
+            }
+
+            // Scala i punti dall'utente
+            const client = await Client.findById(clientID);
+            if (!client) {
+                // Id falso
+                res.sendStatus(400);
+                return;
+            }
+
+            const pointPath = `points.${shopID}`;
+            const currentPoints: number = client.get(pointPath);
+            client.set(pointPath, currentPoints - prize.points!);
+            client.save();
+
+        } else {
             return res.sendStatus(400);
         }
 

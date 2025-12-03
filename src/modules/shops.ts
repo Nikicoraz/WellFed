@@ -130,7 +130,6 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
         await newProduct.save();
 
         const newProductId = newProduct._id;
-        console.log(newProductId);
         await Merchant.findByIdAndUpdate(req.params.id, { $push: { products: newProductId } }).exec();
 
         res.sendStatus(201);
