@@ -1,3 +1,4 @@
+import client from './modules/client.js';
 import cors from 'cors';
 import express from "express";
 import helloExample from "./hello_world_example.js";
@@ -22,6 +23,7 @@ app.use("/api/v1/shops/", shops);
 // all protected API from here
 app.use(tokenChecker);
 
+app.use("/api/v1/client/", client);
 app.use("/api/v1/shops/", shopsAuth);
 app.use("/api/v1/QRCodes/", qrcode);
 app.use(helloExample);
