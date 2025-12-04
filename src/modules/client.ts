@@ -6,23 +6,28 @@ import express from "express";
 const router = express.Router();
 
 router.get("/", clientOnly, async(req, res) => {
-    const areq = (req as AuthenticatedRequest).user;
-    if (!areq) {
+    try {
+        const areq = (req as AuthenticatedRequest).user;
+        if (!areq) {
+            res.sendStatus(401);
+            return;
+        }
+    
+        const user = await Client.findById(areq.id);
+        if (!user) {
+            res.sendStatus(401);
+            return;
+        }
+    
+        res.json({
+            id: user._id,
+            email: user.email,
+            points: user.points
+        }).send();
+    } catch (e) {
+        console.error(e);
         res.sendStatus(401);
-        return;
     }
-
-    const user = await Client.findById(areq.id);
-    if (!user) {
-        res.sendStatus(401);
-        return;
-    }
-
-    res.json({
-        id: user._id,
-        email: user.email,
-        points: user.points
-    }).send();
 });
 
 
