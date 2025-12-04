@@ -1,7 +1,9 @@
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
 import argon from "argon2";
-import express from 'express';
+import deleteImage from "../middleware/deleteImage.js";
+import express from "express";
+import uploadImage from "../middleware/uploadImage.js";
 
 const router = express.Router();
 const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
@@ -35,7 +37,7 @@ router.post("/client", async(req, res) => {
     } catch (e) {
         // Nel caso non riesca ad accedere al body oppure al fare il trim alle opzioni, allora
         // è stata inviata una richiesta non valida
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -44,26 +46,41 @@ router.post("/client", async(req, res) => {
     }
 });
 
-router.post("/merchant", async(req, res) => {
+router.post("/merchant", uploadImage.single('image'), async(req, res) => {
     try {
+        const uploadedImage = req.file;
         const name: string = req.body.name.trim();
         const partitaIVA: string = req.body.partitaIVA.trim();
         const address: string = req.body.address.trim();
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
 
+        const rollbackImageUpload = async () => {
+            if (uploadedImage) {
+                await deleteImage(uploadedImage.filename);
+            }
+        };
+
         if (name == "" || partitaIVA == "" || address == "" || !email.match(simpleEmailRegex) || password == "") {
             res.sendStatus(400);
+            rollbackImageUpload();
             return;
         }
 
         if (!partitaIVA.match(partitaIVARegex)) {
             res.sendStatus(403);
+            rollbackImageUpload();
             return;
         }
 
         if ((await Merchant.find({name: name}).exec()).length > 0 || (await Merchant.find({email: email}).exec()).length > 0) {
             res.sendStatus(409);
+            rollbackImageUpload();
+            return;
+        }
+
+        if (!uploadedImage) {
+            res.sendStatus(400);
             return;
         }
 
@@ -73,6 +90,7 @@ router.post("/merchant", async(req, res) => {
             partitaIVA: partitaIVA,
             address: address,
             email: email,
+            image: uploadedImage.filename,
             password: hashedPassword
         });
 
@@ -80,8 +98,11 @@ router.post("/merchant", async(req, res) => {
         res.sendStatus(202);
 
     } catch (e) {
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
         }
     }
 });

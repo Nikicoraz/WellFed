@@ -55,7 +55,7 @@ router.post("", async(req, res) => {
 
         res.json({token: token}).send();
     } catch (e) {
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(401);
         } else {

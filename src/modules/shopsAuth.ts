@@ -1,4 +1,5 @@
 import Merchant from "../models/merchant.js";
+import Prize from "../models/prize.js";
 import Product from "../models/product.js";
 import deleteImage from "../middleware/deleteImage.js";
 import express from "express";
@@ -6,7 +7,7 @@ import uploadImage from "../middleware/uploadImage.js";
 
 const router = express.Router();
 
-router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
+router.post("/:shopId/products", uploadImage.single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
@@ -44,12 +45,12 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
         await newProduct.save();
 
         const newProductId = newProduct._id;
-        await Merchant.findByIdAndUpdate(req.params.id, { $push: { products: newProductId } }).exec();
+        await Merchant.findByIdAndUpdate(req.params.shopId, { $push: { products: newProductId } }).exec();
 
         res.sendStatus(201);
 
     } catch (e) {
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -58,107 +59,89 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
     }
 });
 
-
 router.patch("/:shopId/products/:productId", uploadImage.single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
+        const { name, description, origin, points } = req.body;
+
         const rollbackImageUpload = async () => {
             if (uploadedImage) {
                 await deleteImage(uploadedImage.filename);
             }
         };
-    
+
+        const checkField = (field: string, updateCallBack: (s: string) => void) => {
+            if (field) {
+                field = field.trim();
+                if (field == "") {
+                    res.sendStatus(400);
+                    rollbackImageUpload();
+                    return;
+                }
+
+                updateCallBack(field);
+            }
+        };
+
         const shopId = req.params.shopId!;
         const productId = req.params.productId!;
 
+        // Cerca il negozio il cui prodotto e' da aggiornare
         const shop = await Merchant.findOne({ 
             _id: shopId,
             products: productId 
         }).exec();
 
+        // Se non esiste rollback
         if (!shop) {
             res.sendStatus(404);
             rollbackImageUpload();
             return;
         }
 
-        const updateFields: Record<string, unknown> = {};
-        
-        if (req.body.name) {
-            const name: string = req.body.name.trim();
-            if (name == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["name"] = name;
-        }
+        // Cerca il prodotto da aggiornare
+        const updatedProduct = await Product.findById(productId).exec();
 
-        if (req.body.description) {
-            const description: string = req.body.description.trim();
-            if (description == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["description"] = description;
-        }
-
-        if (req.body.origin) {
-            const origin: string = req.body.origin.trim();
-            if (origin == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["origin"] = origin;
-        }
-
-        if (req.body.description) {
-            const description: string = req.body.description.trim();
-            if (description == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["description"] = description;
-        }
-        
-        if (req.body.points) {
-            const points: number = req.body.points;
-            updateFields["points"] = points;
-        }
-
-        // Se non ci sono campi da aggiornare
-        if (Object.keys(updateFields).length === 0 && !uploadedImage) {
-            res.sendStatus(400);
+        // Se non esiste rollback
+        if (!updatedProduct) {
+            res.sendStatus(404);
             rollbackImageUpload();
             return;
         }
 
-        const updatedProduct = await Product.findByIdAndUpdate(
-            productId,
-            { $set: updateFields },
-            { new: true }
-        ).exec();
-
-        if (!updatedProduct) {
-            rollbackImageUpload();
-        } else {
-            if (uploadedImage) {
-                // Bisogna cancellare l'immagine vecchia
-                if (updatedProduct.image) {
-                    await deleteImage(updatedProduct.image);
-                }
-                updatedProduct.image = uploadedImage.filename;
-            }
-
-            updatedProduct.save();
+        // Functional Programming Stuff
+        const updateCallBackBuilder = (fieldName: string) => { 
+            return async (field: string) => {
+                await Product.findByIdAndUpdate(
+                    productId,
+                    { $set: { [fieldName]: field } }
+                ).exec();
+            };
+        };
+        
+        // Controlla e aggiorna i campi
+        checkField(name, updateCallBackBuilder("name"));
+        checkField(description, updateCallBackBuilder("description"));
+        checkField(origin, updateCallBackBuilder("origin"));
+ 
+        if (points) {
+            updatedProduct.points = points;
         }
 
+        // Se e' stata caricata un'immagine
+        if (uploadedImage) {
+            // Bisogna cancellare l'immagine vecchia
+            if (updatedProduct.image) {
+                await deleteImage(updatedProduct.image);
+            }
+            updatedProduct.image = uploadedImage.filename;
+        }
+
+        await updatedProduct.save();
         res.sendStatus(200);
+
     } catch (e) {
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -204,7 +187,192 @@ router.delete("/:shopId/products/:productId", async (req, res) => {
 
         res.sendStatus(200);
     } catch (e) {
-        console.log(e);
+        console.error(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.post("/:shopId/prizes", uploadImage.single('image'), async (req, res) => {
+    try {
+        const uploadedImage = req.file;
+        const name: string = req.body.name.trim();
+        const description: string = req.body.description.trim();
+
+        let points: number = 0;
+        if (req.body.points) {
+            points = req.body.points;
+        }
+
+        // Controllo per vedere se e' stata caricata un'immagine
+        if (!uploadedImage) {
+            res.sendStatus(400);
+            return;
+        }
+
+        if (name == "" || description == "") {
+            res.sendStatus(400);
+            await deleteImage(uploadedImage.filename);
+            return;
+        }
+
+        const imagePath: string = uploadedImage.filename;
+
+        const newPrize = new Prize({
+            name: name,
+            description: description,
+            image: imagePath,
+            points: points,
+        });
+
+        await newPrize.save();
+
+        const newPrizeId = newPrize._id;
+        await Merchant.findByIdAndUpdate(req.params.shopId, { $push: { prizes: newPrizeId } }).exec();
+
+        res.sendStatus(201);
+
+    } catch (e) {
+        console.error(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.patch("/:shopId/prizes/:prizeId", uploadImage.single('image'), async (req, res) => {
+    try {
+        const uploadedImage = req.file;
+        const { name, description, points } = req.body;
+
+        const rollbackImageUpload = async () => {
+            if (uploadedImage) {
+                await deleteImage(uploadedImage.filename);
+            }
+        };
+
+        const checkField = (field: string, updateCallBack: (s: string) => void) => {
+            if (field) {
+                field = field.trim();
+                if (field == "") {
+                    res.sendStatus(400);
+                    rollbackImageUpload();
+                    return;
+                }
+
+                updateCallBack(field);
+            }
+        };
+
+        const shopId = req.params.shopId!;
+        const prizeId = req.params.prizeId!;
+
+        // Cerca il negozio il cui premio e' da aggiornare
+        const shop = await Merchant.findOne({ 
+            _id: shopId,
+            prizes: prizeId 
+        }).exec();
+
+        // Se non esiste rollback
+        if (!shop) {
+            res.sendStatus(404);
+            rollbackImageUpload();
+            return;
+        }
+
+        // Cerca il premio da aggiornare
+        const updatedPrize = await Prize.findById(prizeId).exec();
+
+        // Se non esiste rollback
+        if (!updatedPrize) {
+            res.sendStatus(404);
+            rollbackImageUpload();
+            return;
+        }
+
+        // Functional Programming Stuff
+        const updateCallBackBuilder = (fieldName: string) => { 
+            return async (field: string) => {
+                await Prize.findByIdAndUpdate(
+                    prizeId,
+                    { $set: { [fieldName]: field } }
+                ).exec();
+            };
+        };
+        
+        // Controlla e aggiorna i campi
+        checkField(name, updateCallBackBuilder("name"));
+        checkField(description, updateCallBackBuilder("description"));
+ 
+        if (points) {
+            updatedPrize.points = points;
+        }
+
+        // Se e' stata caricata un'immagine
+        if (uploadedImage) {
+            // Bisogna cancellare l'immagine vecchia
+            if (updatedPrize.image) {
+                await deleteImage(updatedPrize.image);
+            }
+            updatedPrize.image = uploadedImage.filename;
+        }
+
+        await updatedPrize.save();
+        res.sendStatus(200);
+
+    } catch (e) {
+        console.error(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.delete("/:shopId/prizes/:prizeId", async (req, res) => {
+    try {
+        const { shopId, prizeId } = req.params;
+
+        const shop = await Merchant.findOne({ 
+            _id: shopId, 
+            prizes: prizeId 
+        }).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const prize = await Prize.findById(prizeId);
+
+        if (!prize) {
+            res.sendStatus(404);
+            return;
+        }
+
+        if (prize.image) {
+            await deleteImage(prize.image);
+        }
+
+        await prize.deleteOne().exec();
+        await Merchant.updateOne({ 
+            _id: shopId,
+            prize: prizeId
+        }, { 
+            $pull: { 
+                prizes: prizeId 
+            }
+        }).exec();
+
+        res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
