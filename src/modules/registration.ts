@@ -46,7 +46,7 @@ router.post("/client", async(req, res) => {
     }
 });
 
-router.post("/merchant", uploadImage.single('image'), async(req, res) => {
+router.post("/merchant", uploadImage('merchants').single('image'), async(req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();

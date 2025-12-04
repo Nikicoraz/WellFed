@@ -7,7 +7,7 @@ import uploadImage from "../middleware/uploadImage.js";
 
 const router = express.Router();
 
-router.post("/:shopId/products", uploadImage.single('image'), async (req, res) => {
+router.post("/:shopId/products", uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
@@ -59,7 +59,7 @@ router.post("/:shopId/products", uploadImage.single('image'), async (req, res) =
     }
 });
 
-router.patch("/:shopId/products/:productId", uploadImage.single('image'), async (req, res) => {
+router.patch("/:shopId/products/:productId", uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const { name, description, origin, points } = req.body;
@@ -196,7 +196,7 @@ router.delete("/:shopId/products/:productId", async (req, res) => {
     }
 });
 
-router.post("/:shopId/prizes", uploadImage.single('image'), async (req, res) => {
+router.post("/:shopId/prizes", uploadImage('prizes').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
@@ -245,7 +245,7 @@ router.post("/:shopId/prizes", uploadImage.single('image'), async (req, res) => 
     }
 });
 
-router.patch("/:shopId/prizes/:prizeId", uploadImage.single('image'), async (req, res) => {
+router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const { name, description, points } = req.body;
