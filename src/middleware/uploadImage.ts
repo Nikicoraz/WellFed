@@ -10,7 +10,6 @@ const uploadImage = (imagePath: string) => {
     return multer({
         storage: multer.diskStorage({
             destination: (req, file, cb) => {
-                console.log(__dirname);
                 const uploadDir = path.join(__dirname, "..", "..", "..", "public", "images", imagePath);
                 cb(null, uploadDir);
             },

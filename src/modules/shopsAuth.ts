@@ -27,7 +27,7 @@ router.post("/:shopId/products", uploadImage('products').single('image'), async 
 
         if (name == "" || description == "" || origin == "") {
             res.sendStatus(400);
-            await deleteImage(uploadedImage.filename);
+            await deleteImage(`products/${uploadedImage.filename}`);
             return;
         }
 
@@ -66,7 +66,7 @@ router.patch("/:shopId/products/:productId", uploadImage('products').single('ima
 
         const rollbackImageUpload = async () => {
             if (uploadedImage) {
-                await deleteImage(uploadedImage.filename);
+                await deleteImage(`products/${uploadedImage.filename}`);
             }
         };
 
@@ -132,7 +132,7 @@ router.patch("/:shopId/products/:productId", uploadImage('products').single('ima
         if (uploadedImage) {
             // Bisogna cancellare l'immagine vecchia
             if (updatedProduct.image) {
-                await deleteImage(updatedProduct.image);
+                await deleteImage(`products/${updatedProduct.image}`);
             }
             updatedProduct.image = uploadedImage.filename;
         }
@@ -172,7 +172,7 @@ router.delete("/:shopId/products/:productId", async (req, res) => {
         }
 
         if (product.image) {
-            await deleteImage(product.image);
+            await deleteImage(`products/${product.image}`);
         }
 
         await product.deleteOne().exec();
@@ -215,7 +215,7 @@ router.post("/:shopId/prizes", uploadImage('prizes').single('image'), async (req
 
         if (name == "" || description == "") {
             res.sendStatus(400);
-            await deleteImage(uploadedImage.filename);
+            await deleteImage(`prizes/${uploadedImage.filename}`);
             return;
         }
 
@@ -252,7 +252,7 @@ router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), 
 
         const rollbackImageUpload = async () => {
             if (uploadedImage) {
-                await deleteImage(uploadedImage.filename);
+                await deleteImage(`prizes/${uploadedImage.filename}`);
             }
         };
 
@@ -317,7 +317,7 @@ router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), 
         if (uploadedImage) {
             // Bisogna cancellare l'immagine vecchia
             if (updatedPrize.image) {
-                await deleteImage(updatedPrize.image);
+                await deleteImage(`prizes/${updatedPrize.image}`);
             }
             updatedPrize.image = uploadedImage.filename;
         }
@@ -357,7 +357,7 @@ router.delete("/:shopId/prizes/:prizeId", async (req, res) => {
         }
 
         if (prize.image) {
-            await deleteImage(prize.image);
+            await deleteImage(`prizes/${prize.image}`);
         }
 
         await prize.deleteOne().exec();
