@@ -1,0 +1,216 @@
+import Merchant from "../models/merchant.js";
+import Product from "../models/product.js";
+import deleteImage from "../middleware/deleteImage.js";
+import express from "express";
+import uploadImage from "../middleware/uploadImage.js";
+
+const router = express.Router();
+
+router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
+    try {
+        const uploadedImage = req.file;
+        const name: string = req.body.name.trim();
+        const description: string = req.body.description.trim();
+        const origin: string = req.body.origin.trim();
+
+        let points: number = 0;
+        if (req.body.points) {
+            points = req.body.points;
+        }
+
+        // Controllo per vedere se e' stata caricata un'immagine
+        if (!uploadedImage) {
+            res.sendStatus(400);
+            return;
+        }
+
+        if (name == "" || description == "" || origin == "") {
+            res.sendStatus(400);
+            await deleteImage(uploadedImage.filename);
+            return;
+        }
+
+
+        const imagePath: string = uploadedImage.filename;
+
+        const newProduct = new Product({
+            name: name,
+            description: description,
+            origin: origin,
+            image: imagePath,
+            points: points,
+        });
+
+        await newProduct.save();
+
+        const newProductId = newProduct._id;
+        await Merchant.findByIdAndUpdate(req.params.id, { $push: { products: newProductId } }).exec();
+
+        res.sendStatus(201);
+
+    } catch (e) {
+        console.log(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+
+router.patch("/:shopId/products/:productId", uploadImage.single('image'), async (req, res) => {
+    try {
+        const uploadedImage = req.file;
+        const rollbackImageUpload = async () => {
+            if (uploadedImage) {
+                await deleteImage(uploadedImage.filename);
+            }
+        };
+    
+        const shopId = req.params.shopId!;
+        const productId = req.params.productId!;
+
+        const shop = await Merchant.findOne({ 
+            _id: shopId,
+            products: productId 
+        }).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
+            rollbackImageUpload();
+            return;
+        }
+
+        const updateFields: Record<string, unknown> = {};
+        
+        if (req.body.name) {
+            const name: string = req.body.name.trim();
+            if (name == "") {
+                res.sendStatus(400);
+                rollbackImageUpload();
+                return;
+            }
+            updateFields["name"] = name;
+        }
+
+        if (req.body.description) {
+            const description: string = req.body.description.trim();
+            if (description == "") {
+                res.sendStatus(400);
+                rollbackImageUpload();
+                return;
+            }
+            updateFields["description"] = description;
+        }
+
+        if (req.body.origin) {
+            const origin: string = req.body.origin.trim();
+            if (origin == "") {
+                res.sendStatus(400);
+                rollbackImageUpload();
+                return;
+            }
+            updateFields["origin"] = origin;
+        }
+
+        if (req.body.description) {
+            const description: string = req.body.description.trim();
+            if (description == "") {
+                res.sendStatus(400);
+                rollbackImageUpload();
+                return;
+            }
+            updateFields["description"] = description;
+        }
+        
+        if (req.body.points) {
+            const points: number = req.body.points;
+            updateFields["points"] = points;
+        }
+
+        // Se non ci sono campi da aggiornare
+        if (Object.keys(updateFields).length === 0 && !uploadedImage) {
+            res.sendStatus(400);
+            rollbackImageUpload();
+            return;
+        }
+
+        const updatedProduct = await Product.findByIdAndUpdate(
+            productId,
+            { $set: updateFields },
+            { new: true }
+        ).exec();
+
+        if (!updatedProduct) {
+            rollbackImageUpload();
+        } else {
+            if (uploadedImage) {
+                // Bisogna cancellare l'immagine vecchia
+                if (updatedProduct.image) {
+                    await deleteImage(updatedProduct.image);
+                }
+                updatedProduct.image = uploadedImage.filename;
+            }
+
+            updatedProduct.save();
+        }
+
+        res.sendStatus(200);
+    } catch (e) {
+        console.log(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.delete("/:shopId/products/:productId", async (req, res) => {
+    try {
+        const { shopId, productId } = req.params;
+
+        const shop = await Merchant.findOne({ 
+            _id: shopId, 
+            products: productId 
+        }).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const product = await Product.findById(productId);
+
+        if (!product) {
+            res.sendStatus(404);
+            return;
+        }
+
+        if (product.image) {
+            await deleteImage(product.image);
+        }
+
+        await product.deleteOne().exec();
+        await Merchant.updateOne({ 
+            _id: shopId,
+            products: productId 
+        }, { 
+            $pull: { 
+                products: productId 
+            }
+        }).exec();
+
+        res.sendStatus(200);
+    } catch (e) {
+        console.log(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+export default router;

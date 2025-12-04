@@ -5,6 +5,7 @@ import login from "./modules/login.js";
 import qrcode from "./modules/qrcode.js";
 import registration from "./modules/registration.js";
 import shops from "./modules/shops.js";
+import shopsAuth from "./modules/shopsAuth.js";
 import tokenChecker from './middleware/tokenChecker.js';
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/api/v1/shops/", shops);
 // all protected API from here
 app.use(tokenChecker);
 
+app.use("/api/v1/shops/", shopsAuth);
 app.use("/api/v1/QRCodes/", qrcode);
 app.use(helloExample);
 

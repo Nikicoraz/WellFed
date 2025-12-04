@@ -24,7 +24,6 @@ tags:
     description: Operations made with transactions
 
 # TODO: login e registrazione SSO dopo aver capito come funziona...
-# TODO: Cambia formato esempio ritorno stringhe su tipo /shop/id/product/
 paths:
     /login:
         summary: Login with credentials

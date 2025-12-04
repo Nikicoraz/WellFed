@@ -26,8 +26,6 @@ interface QR {
     type: QRTypes
 }
 
-// TODO: Trovare un modo per limitare a 1 la scansione dei QR (punti utente campo?????)
-
 class AssignmentQR implements QR {
     type: QRTypes;
     productQuantityList: AssignObject[];
@@ -54,6 +52,16 @@ class RedeemQR implements QR {
     }
 }
 
+let pendingTokens: string[] = [];
+function addPendingToken(token: string) {
+    pendingTokens.push(token);
+    setTimeout(() => {
+        pendingTokens = pendingTokens.filter((e) => {
+            return e != token;
+        });
+    }, (1000 * 60 * 2));
+}
+
 router.post("/assignPoints", merchantOnly, async (req, res) => {
     try {
         const authReq = req as AuthenticatedRequest;
@@ -72,8 +80,9 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
 
         // Il token scade in 2 minuti
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
-    
+
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
+            addPendingToken(token);
             res.send(code);
         });
 
@@ -98,6 +107,7 @@ router.post("/redeemPrize", clientOnly, (req, res) => {
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
+            addPendingToken(token);
             res.send(code);
         });
 
@@ -114,6 +124,11 @@ router.post("/scanned", async(req, res) => {
         const token: string = req.body.token.trim();
         const payload = jwt.verify(token, process.env.PRIVATE_KEY!);
         const qrPayload = payload as QR;
+
+        if (!pendingTokens.includes(token)) { 
+            res.sendStatus(400);
+            return;
+        }
 
         if (qrPayload.type == QRTypes.Assignment && authReq.user.client) {
             const clientID = authReq.user.id;
@@ -190,6 +205,10 @@ router.post("/scanned", async(req, res) => {
             return res.sendStatus(400);
         }
 
+
+        pendingTokens = pendingTokens.filter((e) =>{
+            return e != token;
+        });
         res.sendStatus(200);
     } catch (e) {
         console.error(e);
