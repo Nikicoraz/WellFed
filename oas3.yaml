@@ -149,6 +149,13 @@ paths:
             tags:
                 - Shop
             summary: Get the shop details
+            parameters:
+              - in: path
+                name: shopID
+                required: true
+                description: The shop ID
+                schema:
+                    type: string
             responses:
                 "404":
                     description: Shop not found
@@ -190,8 +197,7 @@ paths:
                 name: notificationID
                 required: true
                 schema:
-                    type: integer
-                    minimum: 0
+                    type: string
                 description: The notification ID to mark as read
             responses:
                 "401":
@@ -210,8 +216,7 @@ paths:
                 name: notificationID
                 required: true
                 schema:
-                    type: integer
-                    minimum: 0
+                    type: string
                 description: The notification ID to delete
             responses:
                 "401":
@@ -273,8 +278,7 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/Product"
-        # TODO: Le immagini inviate dall'utente non possono essere stringhe
-        # TODO: Cambiare gli id da Integer a String
+                                    
         post:
             summary: Adds a product to the shop
             tags:
@@ -412,8 +416,7 @@ paths:
             name: shopID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string
                 description: The id of the shop whose prizes you want
         get:
             summary: Returns the list of prizes sold at a certain shop
@@ -453,15 +456,13 @@ paths:
             name: shopID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string
                 description: The ID of the shop
           - in: path
             name: prizeID
             required: true
             schema:
-                type: integer
-                minimum: 0
+                type: string
                 description: The ID of the prize
         get:
             summary: Returns the details of single prize
@@ -527,7 +528,7 @@ paths:
                     description: The prize was deleted
 
     /QRCodes/assignPoints:
-        get:
+        post:
             summary: Generates a QR with which a merchant can assign points to a user
             tags:
               - QRCode
@@ -543,8 +544,7 @@ paths:
                                 type: object
                                 properties:
                                     productID:
-                                        type: integer
-                                        minimum: 0
+                                        type: string
                                         description: The ID of the purchased product
                                     quantity:
                                         type: integer
@@ -554,6 +554,8 @@ paths:
                                     - productID
                                     - quantity
             responses:
+                "400":
+                    description: Data is invalid
                 "401":
                     description: The user is not logged in, so it cannot generate
                 "200":
@@ -565,7 +567,7 @@ paths:
                                 format: binary
 
     /QRCodes/redeemPrize:
-        get:
+        post:
             summary: Generates a QR with which a user can redeem a prize
             tags:
               - QRCode
@@ -579,13 +581,14 @@ paths:
                             type: object
                             properties:
                                 prizeID:
-                                    type: integer
-                                    minimum: 0
+                                    type: string
                                     description: The id of the prize to redeem
                             required:
                                 - prizeID
 
             responses:
+                "400":
+                    description: Data is invalid
                 "401":
                     description: The user is not logged in, so it cannot generate
                 "200":
@@ -604,15 +607,21 @@ paths:
               - BearerAuth: []
             requestBody:
                 content:
-                    image/jpeg:
+                    application/json:
                         schema:
-                            type: string
-                            format: binary
+                            type: object
+                            properties:
+                                token:
+                                    type: string
+                                    format: token
+                                    example: Token
             responses:
                 "200":
                     description: The QR code was processed successfully
                 "400":
                     description: The QR code is invalid
+                "401":
+                    description: The user is not authenticated
     
     /transactions:
         get:
@@ -640,7 +649,7 @@ components:
             type: object
             properties:
                 id:
-                    type: integer
+                    type: string
                     description: ID of the shop
                 name:
                     type: string
@@ -690,7 +699,7 @@ components:
             type: object
             properties:
                 id:
-                    type: integer
+                    type: string
                     description: The notification id
                 shopLink:
                     type: string
@@ -712,7 +721,7 @@ components:
             type: object
             properties:
                 id:
-                    type: integer
+                    type: string
                     description: The id of the product
                 name:
                     type: string
@@ -757,8 +766,7 @@ components:
             type: object
             properties:
                 id:
-                    type: integer
-                    minimum: 0
+                    type: string
                     description: The id of the prize
                 name: 
                     type: string
@@ -794,7 +802,7 @@ components:
                         description: The the issuer properties
                         properties:
                             id: 
-                                type: integer
+                                type: string
                                 description: the ID of the issuer
                             type:
                                 type: string
@@ -810,7 +818,7 @@ components:
                         description: The the receiver properties
                         properties:
                             id: 
-                                type: integer
+                                type: string
                                 description: the ID of the receiver
                             type:
                                 type: string
@@ -844,12 +852,12 @@ components:
                             products:
                                 type: array
                                 items:
-                                    type: integer
+                                    type: string
                                     description: ID of the products
                             prizes:
                                 type: array
                                 items:
-                                    type: integer
+                                    type: string
                                     description: ID of the prizes
 
                 required:

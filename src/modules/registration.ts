@@ -19,7 +19,7 @@ router.post("/client", async(req, res) => {
             const client = new Client({
                 username: username,
                 password: hashedPassword,
-                email: email
+                email: email,
             });
     
             if ((await Client.find({email: email}).exec()).length == 0 &&

@@ -2,7 +2,14 @@ node_modules
 *-lock.*
 .env
 dist
-public
+
+# Tieni le cartelle create
+public/*
+!public/.gitkeep
+
+!public/images
+public/images/*
+!public/images/.gitkeep
 
 .vscode/*
 !.vscode/extensions.json
