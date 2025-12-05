@@ -7,5 +7,16 @@ export default mongoose.model("Client", new Schema({
     points: {
         type: Map,
         of: Number
-    }
+    },
+    notifications: [{
+        notification: {
+            type: Schema.Types.ObjectId,
+            ref: "Notification",
+            required: true
+        },
+        viewed: {
+            type: Boolean,
+            default: false
+        }
+    }]
 }), "Clients");
