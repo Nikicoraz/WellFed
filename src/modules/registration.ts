@@ -1,9 +1,8 @@
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
 import argon from "argon2";
-import deleteImage from "../middleware/deleteImage.js";
 import express from "express";
-import uploadImage from "../middleware/uploadImage.js";
+import imageUtil from "../middleware/imageUtil.js";
 
 const router = express.Router();
 const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
@@ -24,8 +23,7 @@ router.post("/client", async(req, res) => {
                 email: email,
             });
     
-            if ((await Client.find({email: email}).exec()).length == 0 &&
-                 (await Client.find({username: username}).exec()).length == 0) {
+            if ((await Client.find({email: email}).exec()).length == 0 && (await Client.find({username: username}).exec()).length == 0) {
                 await client.save();
                 res.sendStatus(201);
             } else {
@@ -46,7 +44,7 @@ router.post("/client", async(req, res) => {
     }
 });
 
-router.post("/merchant", uploadImage('merchants').single('image'), async(req, res) => {
+router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), async(req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
@@ -55,32 +53,30 @@ router.post("/merchant", uploadImage('merchants').single('image'), async(req, re
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
 
-        const rollbackImageUpload = async () => {
-            if (uploadedImage) {
-                await deleteImage(uploadedImage.filename);
-            }
-        };
-
-        if (name == "" || partitaIVA == "" || address == "" || !email.match(simpleEmailRegex) || password == "") {
-            res.sendStatus(400);
-            rollbackImageUpload();
-            return;
-        }
-
-        if (!partitaIVA.match(partitaIVARegex)) {
-            res.sendStatus(403);
-            rollbackImageUpload();
-            return;
-        }
-
-        if ((await Merchant.find({name: name}).exec()).length > 0 || (await Merchant.find({email: email}).exec()).length > 0) {
-            res.sendStatus(409);
-            rollbackImageUpload();
-            return;
-        }
-
+        // Immagine non presente
         if (!uploadedImage) {
             res.sendStatus(400);
+            return;
+        }
+
+        // Campi vuoti
+        if (name == "" || partitaIVA == "" || address == "" || !email.match(simpleEmailRegex) || password == "") {
+            res.sendStatus(400);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // PartitaIVA non valida
+        if (!partitaIVA.match(partitaIVARegex)) {
+            res.sendStatus(403);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // Campi nome e email gia' presenti
+        if ((await Merchant.find({name: name}).exec()).length > 0 || (await Merchant.find({email: email}).exec()).length > 0) {
+            res.sendStatus(409);
+            imageUtil.deleteImage(uploadedImage);
             return;
         }
 
@@ -99,6 +95,8 @@ router.post("/merchant", uploadImage('merchants').single('image'), async(req, re
 
     } catch (e) {
         console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {

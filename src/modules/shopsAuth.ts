@@ -1,56 +1,49 @@
 import Merchant from "../models/merchant.js";
 import Prize from "../models/prize.js";
 import Product from "../models/product.js";
-import deleteImage from "../middleware/deleteImage.js";
 import express from "express";
-import uploadImage from "../middleware/uploadImage.js";
+import imageUtil from "../middleware/imageUtil.js";
 
 const router = express.Router();
 
-router.post("/:shopId/products", uploadImage('products').single('image'), async (req, res) => {
+router.post("/:shopID/products", imageUtil.uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
         const description: string = req.body.description.trim();
         const origin: string = req.body.origin.trim();
+        const points: number = req.body.points ?? 0;
 
-        let points: number = 0;
-        if (req.body.points) {
-            points = req.body.points;
-        }
-
-        // Controllo per vedere se e' stata caricata un'immagine
+        // Immagine non presente
         if (!uploadedImage) {
             res.sendStatus(400);
             return;
         }
 
+        // Campi vuoti
         if (name == "" || description == "" || origin == "") {
             res.sendStatus(400);
-            await deleteImage(`products/${uploadedImage.filename}`);
+            imageUtil.deleteImage(uploadedImage);
             return;
         }
 
-
-        const imagePath: string = uploadedImage.filename;
-
         const newProduct = new Product({
-            name: name,
-            description: description,
-            origin: origin,
-            image: imagePath,
-            points: points,
+            name: name.trim(),
+            description: description.trim(),
+            origin: origin.trim(),
+            image: uploadedImage.filename,
+            points: points ?? 0,
         });
 
         await newProduct.save();
-
-        const newProductId = newProduct._id;
-        await Merchant.findByIdAndUpdate(req.params.shopId, { $push: { products: newProductId } }).exec();
+        await Merchant.findByIdAndUpdate(req.params.shopID, { $push: { products: newProduct._id } }).exec();
 
         res.sendStatus(201);
 
     } catch (e) {
         console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -59,23 +52,45 @@ router.post("/:shopId/products", uploadImage('products').single('image'), async 
     }
 });
 
-router.patch("/:shopId/products/:productId", uploadImage('products').single('image'), async (req, res) => {
+router.patch("/:shopID/products/:productID", imageUtil.uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
+        const { shopID, productID } = req.params;
         const { name, description, origin, points } = req.body;
 
-        const rollbackImageUpload = async () => {
-            if (uploadedImage) {
-                await deleteImage(`products/${uploadedImage.filename}`);
-            }
-        };
+        // L'utilizzo di middleware fa si' che i tipi inferiti da req.params siano union "string | undefined"
+        // Per non overcomplicare le cose viene utilizzato !
 
+        // Negozio il cui prodotto e' da aggiornare
+        const shop = await Merchant.findOne({ 
+            _id: shopID!, 
+            products: productID!
+        }).exec();
+
+        // Non esiste il negozio 
+        if (!shop) {
+            res.sendStatus(404);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // Prodotto da aggiornare
+        const updatedProduct = await Product.findById(productID).exec();
+
+        // Non esiste il prodotto 
+        if (!updatedProduct) {
+            res.sendStatus(404);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // Functional Programming Stuff
         const checkField = (field: string, updateCallBack: (s: string) => void) => {
             if (field) {
                 field = field.trim();
                 if (field == "") {
                     res.sendStatus(400);
-                    rollbackImageUpload();
+                    imageUtil.deleteImage(uploadedImage);
                     return;
                 }
 
@@ -83,37 +98,10 @@ router.patch("/:shopId/products/:productId", uploadImage('products').single('ima
             }
         };
 
-        const shopId = req.params.shopId!;
-        const productId = req.params.productId!;
-
-        // Cerca il negozio il cui prodotto e' da aggiornare
-        const shop = await Merchant.findOne({ 
-            _id: shopId,
-            products: productId 
-        }).exec();
-
-        // Se non esiste rollback
-        if (!shop) {
-            res.sendStatus(404);
-            rollbackImageUpload();
-            return;
-        }
-
-        // Cerca il prodotto da aggiornare
-        const updatedProduct = await Product.findById(productId).exec();
-
-        // Se non esiste rollback
-        if (!updatedProduct) {
-            res.sendStatus(404);
-            rollbackImageUpload();
-            return;
-        }
-
-        // Functional Programming Stuff
         const updateCallBackBuilder = (fieldName: string) => { 
             return async (field: string) => {
                 await Product.findByIdAndUpdate(
-                    productId,
+                    productID,
                     { $set: { [fieldName]: field } }
                 ).exec();
             };
@@ -128,12 +116,14 @@ router.patch("/:shopId/products/:productId", uploadImage('products').single('ima
             updatedProduct.points = points;
         }
 
-        // Se e' stata caricata un'immagine
+        // Immagine aggiornata 
         if (uploadedImage) {
-            // Bisogna cancellare l'immagine vecchia
+            // Esiste un'immagine vecchia 
             if (updatedProduct.image) {
-                await deleteImage(`products/${updatedProduct.image}`);
+                // Elimina l'immagine vecchia
+                imageUtil.deleteImageFromPath(`products/${updatedProduct.image}`);
             }
+            // Aggiorna il campo immagine
             updatedProduct.image = uploadedImage.filename;
         }
 
@@ -142,6 +132,8 @@ router.patch("/:shopId/products/:productId", uploadImage('products').single('ima
 
     } catch (e) {
         console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -150,44 +142,52 @@ router.patch("/:shopId/products/:productId", uploadImage('products').single('ima
     }
 });
 
-router.delete("/:shopId/products/:productId", async (req, res) => {
+router.delete("/:shopID/products/:productID", async (req, res) => {
     try {
-        const { shopId, productId } = req.params;
+        const { shopID, productID } = req.params;
 
+        // Negozio il cui prodotto e' da eliminare
         const shop = await Merchant.findOne({ 
-            _id: shopId, 
-            products: productId 
+            _id: shopID, 
+            products: productID 
         }).exec();
 
+        // Non esiste il negozio 
         if (!shop) {
             res.sendStatus(404);
             return;
         }
 
-        const product = await Product.findById(productId);
+        // Prodotto da eliminare
+        const product = await Product.findById(productID);
 
+        // Non esiste il prodotto
         if (!product) {
             res.sendStatus(404);
             return;
         }
 
+        // Il prodotto ha un'immagine
         if (product.image) {
-            await deleteImage(`products/${product.image}`);
+            imageUtil.deleteImageFromPath(`products/${product.image}`);
         }
-
+        
+        // Eliminazione dalla lista dei prodotti del commericante
         await product.deleteOne().exec();
         await Merchant.updateOne({ 
-            _id: shopId,
-            products: productId 
+            _id: shopID,
+            products: productID 
         }, { 
             $pull: { 
-                products: productId 
+                products: productID 
             }
         }).exec();
 
         res.sendStatus(200);
     } catch (e) {
         console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -196,47 +196,42 @@ router.delete("/:shopId/products/:productId", async (req, res) => {
     }
 });
 
-router.post("/:shopId/prizes", uploadImage('prizes').single('image'), async (req, res) => {
+router.post("/:shopID/prizes", imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
         const description: string = req.body.description.trim();
+        const points: number = req.body.points ?? 0;
 
-        let points: number = 0;
-        if (req.body.points) {
-            points = req.body.points;
-        }
-
-        // Controllo per vedere se e' stata caricata un'immagine
+        // Immagine non presente
         if (!uploadedImage) {
             res.sendStatus(400);
             return;
         }
 
+        // Campi vuoti
         if (name == "" || description == "") {
             res.sendStatus(400);
-            await deleteImage(`prizes/${uploadedImage.filename}`);
+            imageUtil.deleteImage(uploadedImage);
             return;
         }
 
-        const imagePath: string = uploadedImage.filename;
-
         const newPrize = new Prize({
-            name: name,
-            description: description,
-            image: imagePath,
-            points: points,
+            name: name.trim(),
+            description: description.trim(),
+            image: uploadedImage.filename,
+            points: points ?? 0,
         });
 
         await newPrize.save();
-
-        const newPrizeId = newPrize._id;
-        await Merchant.findByIdAndUpdate(req.params.shopId, { $push: { prizes: newPrizeId } }).exec();
+        await Merchant.findByIdAndUpdate(req.params.shopID, { $push: { prizes: newPrize._id } }).exec();
 
         res.sendStatus(201);
 
     } catch (e) {
         console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -245,23 +240,45 @@ router.post("/:shopId/prizes", uploadImage('prizes').single('image'), async (req
     }
 });
 
-router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), async (req, res) => {
+router.patch("/:shopID/prizes/:prizeID", imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
+        const { shopID, prizeID } = req.params;
         const { name, description, points } = req.body;
 
-        const rollbackImageUpload = async () => {
-            if (uploadedImage) {
-                await deleteImage(`prizes/${uploadedImage.filename}`);
-            }
-        };
+        // L'utilizzo di middleware fa si' che i tipi inferiti da req.params siano union "string | undefined"
+        // Per non overcomplicare le cose viene utilizzato !
 
+        // Negozio il cui prodotto e' da aggiornare
+        const shop = await Merchant.findOne({ 
+            _id: shopID!, 
+            prize: prizeID!
+        }).exec();
+
+        // Non esiste il negozio 
+        if (!shop) {
+            res.sendStatus(404);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // Prodotto da aggiornare
+        const updatedPrize = await Prize.findById(prizeID).exec();
+
+        // Non esiste il prodotto 
+        if (!updatedPrize) {
+            res.sendStatus(404);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // Functional Programming Stuff
         const checkField = (field: string, updateCallBack: (s: string) => void) => {
             if (field) {
                 field = field.trim();
                 if (field == "") {
                     res.sendStatus(400);
-                    rollbackImageUpload();
+                    imageUtil.deleteImage(uploadedImage);
                     return;
                 }
 
@@ -269,37 +286,10 @@ router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), 
             }
         };
 
-        const shopId = req.params.shopId!;
-        const prizeId = req.params.prizeId!;
-
-        // Cerca il negozio il cui premio e' da aggiornare
-        const shop = await Merchant.findOne({ 
-            _id: shopId,
-            prizes: prizeId 
-        }).exec();
-
-        // Se non esiste rollback
-        if (!shop) {
-            res.sendStatus(404);
-            rollbackImageUpload();
-            return;
-        }
-
-        // Cerca il premio da aggiornare
-        const updatedPrize = await Prize.findById(prizeId).exec();
-
-        // Se non esiste rollback
-        if (!updatedPrize) {
-            res.sendStatus(404);
-            rollbackImageUpload();
-            return;
-        }
-
-        // Functional Programming Stuff
         const updateCallBackBuilder = (fieldName: string) => { 
             return async (field: string) => {
                 await Prize.findByIdAndUpdate(
-                    prizeId,
+                    prizeID,
                     { $set: { [fieldName]: field } }
                 ).exec();
             };
@@ -308,17 +298,20 @@ router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), 
         // Controlla e aggiorna i campi
         checkField(name, updateCallBackBuilder("name"));
         checkField(description, updateCallBackBuilder("description"));
+        checkField(origin, updateCallBackBuilder("origin"));
  
         if (points) {
             updatedPrize.points = points;
         }
 
-        // Se e' stata caricata un'immagine
+        // Immagine aggiornata 
         if (uploadedImage) {
-            // Bisogna cancellare l'immagine vecchia
+            // Esiste un'immagine vecchia 
             if (updatedPrize.image) {
-                await deleteImage(`prizes/${updatedPrize.image}`);
+                // Elimina l'immagine vecchia
+                imageUtil.deleteImageFromPath(`prizes/${updatedPrize.image}`);
             }
+            // Aggiorna il campo immagine
             updatedPrize.image = uploadedImage.filename;
         }
 
@@ -327,6 +320,8 @@ router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), 
 
     } catch (e) {
         console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -335,44 +330,52 @@ router.patch("/:shopId/prizes/:prizeId", uploadImage('prizes').single('image'), 
     }
 });
 
-router.delete("/:shopId/prizes/:prizeId", async (req, res) => {
+router.delete("/:shopID/prizes/:prizeID", async (req, res) => {
     try {
-        const { shopId, prizeId } = req.params;
+        const { shopID, prizeID } = req.params;
 
+        // Negozio il cui prodotto e' da eliminare
         const shop = await Merchant.findOne({ 
-            _id: shopId, 
-            prizes: prizeId 
+            _id: shopID, 
+            prizes: prizeID 
         }).exec();
 
+        // Non esiste il negozio 
         if (!shop) {
             res.sendStatus(404);
             return;
         }
 
-        const prize = await Prize.findById(prizeId);
+        // Prodotto da eliminare
+        const prize = await Prize.findById(prizeID);
 
+        // Non esiste il prodotto
         if (!prize) {
             res.sendStatus(404);
             return;
         }
 
+        // Il prodotto ha un'immagine
         if (prize.image) {
-            await deleteImage(`prizes/${prize.image}`);
+            imageUtil.deleteImageFromPath(`prizes/${prize.image}`);
         }
-
+        
+        // Eliminazione dalla lista dei prodotti del commericante
         await prize.deleteOne().exec();
         await Merchant.updateOne({ 
-            _id: shopId,
-            prize: prizeId
+            _id: shopID,
+            prizes: prizeID 
         }, { 
             $pull: { 
-                prizes: prizeId 
+                prizes: prizeID 
             }
         }).exec();
 
         res.sendStatus(200);
     } catch (e) {
         console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {

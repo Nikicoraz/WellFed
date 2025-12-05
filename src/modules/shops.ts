@@ -14,7 +14,7 @@ router.get("", async(req, res) => {
                 id: shop._id.toString(),
                 name: shop.name,
                 address: shop.address,
-                image: shop.image
+                image: `${imagePath}merchants/${shop.image}`
             };
         }));
     } catch (e) {
@@ -40,7 +40,7 @@ router.get("/:shopId", async (req, res) => {
             id: shop._id.toString(),
             name: shop.name,
             address: shop.address,
-            image: `${imagePath}/merchants/${shop.image}`
+            image: `${imagePath}merchants/${shop.image}`
         });
     } catch (e) {
         console.error(e);
@@ -77,7 +77,7 @@ router.get("/:shopId/products", async (req, res) => {
                     name: product.name,
                     description: product.description,
                     origin: product.origin,
-                    image: `${imagePath}/products/${product.image}`,
+                    image: `${imagePath}products/${product.image}`,
                     points: product.points
                 };
             })
@@ -118,7 +118,7 @@ router.get("/:shopId/products/:productId", async (req, res) => {
             name: product.name,
             description: product.description,
             origin: product.origin,
-            image: `${imagePath}/products/${product.image}`,
+            image: `${imagePath}products/${product.image}`,
             points: product.points
         });
     } catch (e) {
@@ -155,7 +155,7 @@ router.get("/:shopId/prizes", async (req, res) => {
                     id: prize._id.toString(), // Usa '!' o controllo per Type safety in TS
                     name: prize.name,
                     description: prize.description,
-                    image: `${imagePath}/prizes/${prize.image}`,
+                    image: `${imagePath}prizes/${prize.image}`,
                     points: prize.points
                 };
             })
@@ -195,7 +195,7 @@ router.get("/:shopId/prizes/:prizeId", async (req, res) => {
             id: prize._id.toString(),
             name: prize.name,
             description: prize.description,
-            image: `${imagePath}/prizes/${prize.image}`,
+            image: `${imagePath}prizes/${prize.image}`,
             points: prize.points
         });
 
