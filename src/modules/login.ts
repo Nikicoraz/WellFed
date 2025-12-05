@@ -4,6 +4,7 @@ import type { JwtCustomPayload } from "../middleware/tokenChecker.js";
 import Merchant from "../models/merchant.js";
 import argon from "argon2";
 import express from "express";
+import { sendNotification } from "./notifications.js";
 
 const router = express.Router();
 const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
@@ -53,6 +54,8 @@ router.post("", async(req, res) => {
 
         const token = jwt.sign(payload!, process.env.PRIVATE_KEY!, tokenOptions);
 
+        
+        sendNotification("null", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
         res.json({token: token}).send();
     } catch (e) {
         console.log(e);

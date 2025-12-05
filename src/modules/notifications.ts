@@ -1,10 +1,29 @@
 import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
 import Client from "../models/client.js";
 import Notification from "../models/notification.js";
+import type { Types } from "mongoose";
 import clientOnly from "../middleware/clientOnly.js";
 import express from "express";
 
 const router = express.Router();
+
+export async function sendNotification(shopLink: string, message: string, clientID: Types.ObjectId) {
+    const newNotification = new Notification({
+        shopLink: shopLink,
+        notificationMessage: message
+    });
+
+    await newNotification.save();
+
+    await Client.findByIdAndUpdate(clientID, {
+        $push: {
+            notifications: {
+                notification: newNotification.id,
+                viewed: false
+            }
+        }
+    });
+}
 
 router.get("/", clientOnly,  async(req, res) => {
     try {
@@ -89,6 +108,16 @@ router.delete("/:id", clientOnly, async(req, res) => {
             res.sendStatus(404);
             return;
         }
+
+        const check = await Client.findOne({
+            "notifications.notification": notificationID
+        });
+
+        // Non ci sono più riferimenti alla notifica
+        if (!check) {
+            await Notification.findByIdAndDelete(notificationID);
+        }
+
         res.sendStatus(200);
     } catch (e) {
         console.error(e);
