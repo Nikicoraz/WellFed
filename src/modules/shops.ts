@@ -1,4 +1,5 @@
 import Merchant from "../models/merchant.js";
+import Prize from "../models/prize.js";
 import Product from "../models/product.js";
 import express from "express";
 
@@ -13,11 +14,11 @@ router.get("", async(req, res) => {
                 id: shop._id.toString(),
                 name: shop.name,
                 address: shop.address,
-                image: shop.image
+                image: `${imagePath}merchants/${shop.image}`
             };
         }));
     } catch (e) {
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -27,9 +28,9 @@ router.get("", async(req, res) => {
 });
 
 
-router.get("/:id", async (req, res) => {
+router.get("/:shopId", async (req, res) => {
     try {
-        const shop = await Merchant.findById(req.params.id).exec();
+        const shop = await Merchant.findById(req.params.shopId).exec();
         if (!shop) {
             res.sendStatus(404);
             return;
@@ -39,10 +40,10 @@ router.get("/:id", async (req, res) => {
             id: shop._id.toString(),
             name: shop.name,
             address: shop.address,
-            image: `${imagePath}${shop.image}`
+            image: `${imagePath}merchants/${shop.image}`
         });
     } catch (e) {
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -51,9 +52,9 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.get("/:id/products", async (req, res) => {
+router.get("/:shopId/products", async (req, res) => {
     try {
-        const shop = await Merchant.findById(req.params.id).exec();
+        const shop = await Merchant.findById(req.params.shopId).exec();
 
         if (!shop) {
             res.sendStatus(404);
@@ -76,13 +77,13 @@ router.get("/:id/products", async (req, res) => {
                     name: product.name,
                     description: product.description,
                     origin: product.origin,
-                    image: `${imagePath}${product.image}`,
+                    image: `${imagePath}products/${product.image}`,
                     points: product.points
                 };
             })
         );
     } catch (e) {
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -90,8 +91,6 @@ router.get("/:id/products", async (req, res) => {
         }
     }
 });
-
-
 
 router.get("/:shopId/products/:productId", async (req, res) => {
     try {
@@ -119,11 +118,11 @@ router.get("/:shopId/products/:productId", async (req, res) => {
             name: product.name,
             description: product.description,
             origin: product.origin,
-            image: `${imagePath}${product.image}`,
+            image: `${imagePath}products/${product.image}`,
             points: product.points
         });
     } catch (e) {
-        console.log(e);
+        console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -132,5 +131,82 @@ router.get("/:shopId/products/:productId", async (req, res) => {
     }
 });
 
+router.get("/:shopId/prizes", async (req, res) => {
+    try {
+        const shop = await Merchant.findById(req.params.shopId).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const prizesPromises = shop.prizes.map((prizeRef) => {
+            return Prize.findById(prizeRef).exec();
+        });
+
+        const resolvedPrizes = await Promise.all(prizesPromises);
+
+        res.json(resolvedPrizes
+            .filter((prize) => {
+                return prize !== null;    
+            })
+            .map((prize) => {
+                return {
+                    id: prize._id.toString(), // Usa '!' o controllo per Type safety in TS
+                    name: prize.name,
+                    description: prize.description,
+                    image: `${imagePath}prizes/${prize.image}`,
+                    points: prize.points
+                };
+            })
+        );
+    } catch (e) {
+        console.error(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.get("/:shopId/prizes/:prizeId", async (req, res) => {
+    try {
+        const { shopId, prizeId } = req.params;
+
+        const shop = await Merchant.findOne({
+            _id: shopId,
+            prizes: prizeId
+        }).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const prize = await Prize.findById(prizeId).exec();
+
+        if (!prize) {
+            res.sendStatus(404);
+            return;
+        }
+
+        res.json({
+            id: prize._id.toString(),
+            name: prize.name,
+            description: prize.description,
+            image: `${imagePath}prizes/${prize.image}`,
+            points: prize.points
+        });
+
+    } catch (e) {
+        console.error(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
 
 export default router;

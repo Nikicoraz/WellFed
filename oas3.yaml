@@ -108,9 +108,41 @@ paths:
             summary: Send a registration request for the merchant type user
             requestBody:
                 content:
-                    application/json:
+                    multipart/form-data:
                         schema:
-                            $ref: "#/components/schemas/Merchant"
+                          type: object
+                          properties:
+                              name:
+                                  type: string
+                                  description: The name of the merchant's shop
+                                  example: "Luca Bianchi"
+                              partitaIVA:
+                                  type: string
+                                  description: The Partita IVA of the merchant
+                                  example: "12345678901"
+                              address:
+                                  type: string
+                                  description: The shop address
+                                  example: "Via Sommarive, 5, 38123 Trento TN"
+                              email:
+                                  type: string
+                                  description: The email address of the merchant
+                                  example: "l.bianchi@gmail.com"
+                              image:
+                                  type: string
+                                  format: binary
+                                  description: The merchant image file
+                              password:
+                                  type: string
+                                  description: The cleartext password to access the merchant's account
+                                  example: "bestshopever"
+                          required:
+                              - name
+                              - partitaIVA
+                              - address
+                              - email
+                              - password
+                              - image
                     
             responses:
                 "409":
@@ -459,9 +491,37 @@ paths:
               - BearerAuth: []
             requestBody:
                 content:
-                    application/json:
+                    multipart/form-data:
                         schema:
-                            $ref: "#/components/schemas/Prize"
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    description: The name of the product
+                                    example: Cestino Cioccolata
+                                description:
+                                    type: string
+                                    description: The description of the product
+                                    example: Un cestino contenente cicoccolato fondente, ciccolato bianco e cioccolato al latte 
+                                points:
+                                    type: integer
+                                    minimum: 0
+                                    description: The number of points assigned to the client when this product is bought
+                                    example: 5
+                                
+                                # File dell'immagine (inviato come campo file)
+                                image:
+                                    type: string
+                                    format: binary
+                                    description: The product image file
+                            required:
+                                - name
+                                - description
+                                - image
+                    image/jpeg:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "201":
                     description: The prize was added to the shop
@@ -506,7 +566,7 @@ paths:
               - BearerAuth: []
             requestBody:
                 content:
-                  application/json:
+                  multipart/form-data:
                     schema:
                         # Riscrivo lo schema del premio siccome non è obbligatorio
                         # fornire tutti i campi e non è possibile cambiare ID
@@ -524,8 +584,8 @@ paths:
                                     un salame, qualche formaggio e della pasta
                             image:
                                 type: string
-                                description: URL of where to find the prize image
-                                example: /public/img/32106f1b2ad92b54295.png
+                                format: binary
+                                description: The product image file
                             points:
                                 type: integer
                                 minimum: 1

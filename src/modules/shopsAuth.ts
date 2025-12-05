@@ -1,55 +1,49 @@
 import Merchant from "../models/merchant.js";
+import Prize from "../models/prize.js";
 import Product from "../models/product.js";
-import deleteImage from "../middleware/deleteImage.js";
 import express from "express";
-import uploadImage from "../middleware/uploadImage.js";
+import imageUtil from "../middleware/imageUtil.js";
 
 const router = express.Router();
 
-router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
+router.post("/:shopID/products", imageUtil.uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
         const description: string = req.body.description.trim();
         const origin: string = req.body.origin.trim();
+        const points: number = req.body.points ?? 0;
 
-        let points: number = 0;
-        if (req.body.points) {
-            points = req.body.points;
-        }
-
-        // Controllo per vedere se e' stata caricata un'immagine
+        // Immagine non presente
         if (!uploadedImage) {
             res.sendStatus(400);
             return;
         }
 
+        // Campi vuoti
         if (name == "" || description == "" || origin == "") {
             res.sendStatus(400);
-            await deleteImage(uploadedImage.filename);
+            imageUtil.deleteImage(uploadedImage);
             return;
         }
 
-
-        const imagePath: string = uploadedImage.filename;
-
         const newProduct = new Product({
-            name: name,
-            description: description,
-            origin: origin,
-            image: imagePath,
-            points: points,
+            name: name.trim(),
+            description: description.trim(),
+            origin: origin.trim(),
+            image: uploadedImage.filename,
+            points: points ?? 0,
         });
 
         await newProduct.save();
-
-        const newProductId = newProduct._id;
-        await Merchant.findByIdAndUpdate(req.params.id, { $push: { products: newProductId } }).exec();
+        await Merchant.findByIdAndUpdate(req.params.shopID, { $push: { products: newProduct._id } }).exec();
 
         res.sendStatus(201);
 
     } catch (e) {
-        console.log(e);
+        console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -58,107 +52,88 @@ router.post("/:id/products", uploadImage.single('image'), async (req, res) => {
     }
 });
 
-
-router.patch("/:shopId/products/:productId", uploadImage.single('image'), async (req, res) => {
+router.patch("/:shopID/products/:productID", imageUtil.uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
-        const rollbackImageUpload = async () => {
-            if (uploadedImage) {
-                await deleteImage(uploadedImage.filename);
-            }
-        };
-    
-        const shopId = req.params.shopId!;
-        const productId = req.params.productId!;
+        const { shopID, productID } = req.params;
+        const { name, description, origin, points } = req.body;
 
+        // L'utilizzo di middleware fa si' che i tipi inferiti da req.params siano union "string | undefined"
+        // Per non overcomplicare le cose viene utilizzato !
+
+        // Negozio il cui prodotto e' da aggiornare
         const shop = await Merchant.findOne({ 
-            _id: shopId,
-            products: productId 
+            _id: shopID!, 
+            products: productID!
         }).exec();
 
+        // Non esiste il negozio 
         if (!shop) {
             res.sendStatus(404);
-            rollbackImageUpload();
+            imageUtil.deleteImage(uploadedImage);
             return;
         }
 
-        const updateFields: Record<string, unknown> = {};
-        
-        if (req.body.name) {
-            const name: string = req.body.name.trim();
-            if (name == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["name"] = name;
-        }
+        // Prodotto da aggiornare
+        const updatedProduct = await Product.findById(productID).exec();
 
-        if (req.body.description) {
-            const description: string = req.body.description.trim();
-            if (description == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["description"] = description;
-        }
-
-        if (req.body.origin) {
-            const origin: string = req.body.origin.trim();
-            if (origin == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["origin"] = origin;
-        }
-
-        if (req.body.description) {
-            const description: string = req.body.description.trim();
-            if (description == "") {
-                res.sendStatus(400);
-                rollbackImageUpload();
-                return;
-            }
-            updateFields["description"] = description;
-        }
-        
-        if (req.body.points) {
-            const points: number = req.body.points;
-            updateFields["points"] = points;
-        }
-
-        // Se non ci sono campi da aggiornare
-        if (Object.keys(updateFields).length === 0 && !uploadedImage) {
-            res.sendStatus(400);
-            rollbackImageUpload();
-            return;
-        }
-
-        const updatedProduct = await Product.findByIdAndUpdate(
-            productId,
-            { $set: updateFields },
-            { new: true }
-        ).exec();
-
+        // Non esiste il prodotto 
         if (!updatedProduct) {
-            rollbackImageUpload();
-        } else {
-            if (uploadedImage) {
-                // Bisogna cancellare l'immagine vecchia
-                if (updatedProduct.image) {
-                    await deleteImage(updatedProduct.image);
-                }
-                updatedProduct.image = uploadedImage.filename;
-            }
-
-            updatedProduct.save();
+            res.sendStatus(404);
+            imageUtil.deleteImage(uploadedImage);
+            return;
         }
 
+        // Functional Programming Stuff
+        const checkField = (field: string, updateCallBack: (s: string) => void) => {
+            if (field) {
+                field = field.trim();
+                if (field == "") {
+                    res.sendStatus(400);
+                    imageUtil.deleteImage(uploadedImage);
+                    return;
+                }
+
+                updateCallBack(field);
+            }
+        };
+
+        const updateCallBackBuilder = (fieldName: string) => { 
+            return async (field: string) => {
+                await Product.findByIdAndUpdate(
+                    productID,
+                    { $set: { [fieldName]: field } }
+                ).exec();
+            };
+        };
+        
+        // Controlla e aggiorna i campi
+        checkField(name, updateCallBackBuilder("name"));
+        checkField(description, updateCallBackBuilder("description"));
+        checkField(origin, updateCallBackBuilder("origin"));
+ 
+        if (points) {
+            updatedProduct.points = points;
+        }
+
+        // Immagine aggiornata 
+        if (uploadedImage) {
+            // Esiste un'immagine vecchia 
+            if (updatedProduct.image) {
+                // Elimina l'immagine vecchia
+                imageUtil.deleteImageFromPath(`products/${updatedProduct.image}`);
+            }
+            // Aggiorna il campo immagine
+            updatedProduct.image = uploadedImage.filename;
+        }
+
+        await updatedProduct.save();
         res.sendStatus(200);
+
     } catch (e) {
-        console.log(e);
+        console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -167,44 +142,240 @@ router.patch("/:shopId/products/:productId", uploadImage.single('image'), async 
     }
 });
 
-router.delete("/:shopId/products/:productId", async (req, res) => {
+router.delete("/:shopID/products/:productID", async (req, res) => {
     try {
-        const { shopId, productId } = req.params;
+        const { shopID, productID } = req.params;
 
+        // Negozio il cui prodotto e' da eliminare
         const shop = await Merchant.findOne({ 
-            _id: shopId, 
-            products: productId 
+            _id: shopID, 
+            products: productID 
         }).exec();
 
+        // Non esiste il negozio 
         if (!shop) {
             res.sendStatus(404);
             return;
         }
 
-        const product = await Product.findById(productId);
+        // Prodotto da eliminare
+        const product = await Product.findById(productID);
 
+        // Non esiste il prodotto
         if (!product) {
             res.sendStatus(404);
             return;
         }
 
+        // Il prodotto ha un'immagine
         if (product.image) {
-            await deleteImage(product.image);
+            imageUtil.deleteImageFromPath(`products/${product.image}`);
         }
-
+        
+        // Eliminazione dalla lista dei prodotti del commericante
         await product.deleteOne().exec();
         await Merchant.updateOne({ 
-            _id: shopId,
-            products: productId 
+            _id: shopID,
+            products: productID 
         }, { 
             $pull: { 
-                products: productId 
+                products: productID 
             }
         }).exec();
 
         res.sendStatus(200);
     } catch (e) {
-        console.log(e);
+        console.error(e);
+        imageUtil.deleteImage(req.file);
+
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.post("/:shopID/prizes", imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
+    try {
+        const uploadedImage = req.file;
+        const name: string = req.body.name.trim();
+        const description: string = req.body.description.trim();
+        const points: number = req.body.points ?? 0;
+
+        // Immagine non presente
+        if (!uploadedImage) {
+            res.sendStatus(400);
+            return;
+        }
+
+        // Campi vuoti
+        if (name == "" || description == "") {
+            res.sendStatus(400);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        const newPrize = new Prize({
+            name: name.trim(),
+            description: description.trim(),
+            image: uploadedImage.filename,
+            points: points ?? 0,
+        });
+
+        await newPrize.save();
+        await Merchant.findByIdAndUpdate(req.params.shopID, { $push: { prizes: newPrize._id } }).exec();
+
+        res.sendStatus(201);
+
+    } catch (e) {
+        console.error(e);
+        imageUtil.deleteImage(req.file);
+
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.patch("/:shopID/prizes/:prizeID", imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
+    try {
+        const uploadedImage = req.file;
+        const { shopID, prizeID } = req.params;
+        const { name, description, points } = req.body;
+
+        // L'utilizzo di middleware fa si' che i tipi inferiti da req.params siano union "string | undefined"
+        // Per non overcomplicare le cose viene utilizzato !
+
+        // Negozio il cui prodotto e' da aggiornare
+        const shop = await Merchant.findOne({ 
+            _id: shopID!, 
+            prize: prizeID!
+        }).exec();
+
+        // Non esiste il negozio 
+        if (!shop) {
+            res.sendStatus(404);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // Prodotto da aggiornare
+        const updatedPrize = await Prize.findById(prizeID).exec();
+
+        // Non esiste il prodotto 
+        if (!updatedPrize) {
+            res.sendStatus(404);
+            imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        // Functional Programming Stuff
+        const checkField = (field: string, updateCallBack: (s: string) => void) => {
+            if (field) {
+                field = field.trim();
+                if (field == "") {
+                    res.sendStatus(400);
+                    imageUtil.deleteImage(uploadedImage);
+                    return;
+                }
+
+                updateCallBack(field);
+            }
+        };
+
+        const updateCallBackBuilder = (fieldName: string) => { 
+            return async (field: string) => {
+                await Prize.findByIdAndUpdate(
+                    prizeID,
+                    { $set: { [fieldName]: field } }
+                ).exec();
+            };
+        };
+        
+        // Controlla e aggiorna i campi
+        checkField(name, updateCallBackBuilder("name"));
+        checkField(description, updateCallBackBuilder("description"));
+        checkField(origin, updateCallBackBuilder("origin"));
+ 
+        if (points) {
+            updatedPrize.points = points;
+        }
+
+        // Immagine aggiornata 
+        if (uploadedImage) {
+            // Esiste un'immagine vecchia 
+            if (updatedPrize.image) {
+                // Elimina l'immagine vecchia
+                imageUtil.deleteImageFromPath(`prizes/${updatedPrize.image}`);
+            }
+            // Aggiorna il campo immagine
+            updatedPrize.image = uploadedImage.filename;
+        }
+
+        await updatedPrize.save();
+        res.sendStatus(200);
+
+    } catch (e) {
+        console.error(e);
+        imageUtil.deleteImage(req.file);
+
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+});
+
+router.delete("/:shopID/prizes/:prizeID", async (req, res) => {
+    try {
+        const { shopID, prizeID } = req.params;
+
+        // Negozio il cui prodotto e' da eliminare
+        const shop = await Merchant.findOne({ 
+            _id: shopID, 
+            prizes: prizeID 
+        }).exec();
+
+        // Non esiste il negozio 
+        if (!shop) {
+            res.sendStatus(404);
+            return;
+        }
+
+        // Prodotto da eliminare
+        const prize = await Prize.findById(prizeID);
+
+        // Non esiste il prodotto
+        if (!prize) {
+            res.sendStatus(404);
+            return;
+        }
+
+        // Il prodotto ha un'immagine
+        if (prize.image) {
+            imageUtil.deleteImageFromPath(`prizes/${prize.image}`);
+        }
+        
+        // Eliminazione dalla lista dei prodotti del commericante
+        await prize.deleteOne().exec();
+        await Merchant.updateOne({ 
+            _id: shopID,
+            prizes: prizeID 
+        }, { 
+            $pull: { 
+                prizes: prizeID 
+            }
+        }).exec();
+
+        res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
+        imageUtil.deleteImage(req.file);
+
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
