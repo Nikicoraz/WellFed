@@ -252,6 +252,8 @@ paths:
                     type: string
                 description: The notification ID to mark as read
             responses:
+                "404":
+                    description: Notification not found
                 "401":
                     description: The user is not logged in or cannot access the notification
                 "200":
@@ -273,6 +275,8 @@ paths:
             responses:
                 "401":
                     description: The user is not logged in or cannot access the notification
+                "404":
+                    description: The notification was not found
                 "200":
                     description: The notification has been deleted
     /search:

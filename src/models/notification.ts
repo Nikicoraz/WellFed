@@ -2,6 +2,6 @@ import mongoose, { Schema } from "mongoose";
 
 export default mongoose.model("Notification", new Schema({
     shopLink: String,
-    viewed: Boolean,
+    title: String,
     notificationMessage: String
 }), "Notifications");

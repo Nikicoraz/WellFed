@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from "express";
 import helloExample from "./hello_world_example.js";
 import login from "./modules/login.js";
+import notifications from './modules/notifications.js';
 import qrcode from "./modules/qrcode.js";
 import registration from "./modules/registration.js";
 import shops from "./modules/shops.js";
@@ -26,6 +27,7 @@ app.use(tokenChecker);
 app.use("/api/v1/client/", client);
 app.use("/api/v1/shops/", shopsAuth);
 app.use("/api/v1/QRCodes/", qrcode);
+app.use("/api/v1/notifications/", notifications);
 app.use(helloExample);
 
 export default app;
