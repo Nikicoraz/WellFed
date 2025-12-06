@@ -1,3 +1,4 @@
+import { TransactionStatus, TransactionType } from "../models/transaction.js";
 import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
@@ -7,6 +8,7 @@ import type { Types } from "mongoose";
 import clientOnly from "../middleware/clientOnly.js";
 import express from "express";
 import jwt from "jsonwebtoken";
+import { logTransaction } from "./transactions.js";
 import merchantOnly from '../middleware/merchantOnly.js';
 import qrcode from "qrcode";
 
@@ -82,6 +84,10 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
+            if (err) {
+                console.error(err);
+                return res.sendStatus(500);
+            }
             addPendingToken(token);
             res.send(code);
         });
@@ -107,6 +113,10 @@ router.post("/redeemPrize", clientOnly, (req, res) => {
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
+            if (err) {
+                console.error(err);
+                return res.sendStatus(500);
+            }
             addPendingToken(token);
             res.send(code);
         });
@@ -163,6 +173,12 @@ router.post("/scanned", async(req, res) => {
             client.set(pointsString, oldPoints + points);
             client.save();
 
+            // Non serve aspettare la fine della funzione
+            logTransaction(clientID, shopID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
+                prizes: [],
+                products: productList
+            });
+
             // Update finished
 
         } else if (qrPayload.type == QRTypes.Redeem && !authReq.user.client) {
@@ -200,6 +216,10 @@ router.post("/scanned", async(req, res) => {
             const currentPoints: number = client.get(pointPath);
             client.set(pointPath, currentPoints - prize.points!);
             client.save();
+            logTransaction(clientID, shopID, prize.points!, TransactionType.PrizeRedeem, TransactionStatus.Success, {
+                prizes: [prizeID],
+                products: []
+            });
 
         } else {
             return res.sendStatus(400);
