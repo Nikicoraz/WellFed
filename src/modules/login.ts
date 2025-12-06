@@ -55,7 +55,7 @@ router.post("", async(req, res) => {
         const token = jwt.sign(payload!, process.env.PRIVATE_KEY!, tokenOptions);
 
         
-        sendNotification("null", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
+        sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
         res.json({token: token}).send();
     } catch (e) {
         console.log(e);

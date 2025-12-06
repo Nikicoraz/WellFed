@@ -7,9 +7,10 @@ import express from "express";
 
 const router = express.Router();
 
-export async function sendNotification(shopLink: string, message: string, clientID: Types.ObjectId) {
+export async function sendNotification(shopLink: string, title: string, message: string, clientID: Types.ObjectId) {
     const newNotification = new Notification({
         shopLink: shopLink,
+        title: title,
         notificationMessage: message
     });
 
@@ -48,6 +49,7 @@ router.get("/", clientOnly,  async(req, res) => {
                 id: n._id,
                 shopLink: n.shopLink,
                 viewed: clientNotification.viewed,
+                title: n.title,
                 notificationMessage: n.notificationMessage
             });
         }
