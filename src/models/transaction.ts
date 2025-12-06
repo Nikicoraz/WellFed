@@ -31,4 +31,4 @@ export default mongoose.model("Transaction", new Schema({
 }).index({
     issuerID: 1,
     receiverID: 1
-}));
+}), "Transactions");

@@ -1,32 +1,54 @@
 
-import Transaction, { TransactionType } from "../models/transaction.js";
+import Transaction, { TransactionStatus, TransactionType } from "../models/transaction.js";
 import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
+import type { Types } from "mongoose";
 import express from "express";
 
 const router = express.Router();
 
+export interface TransactionItems {
+    products: Types.ObjectId[],
+    prizes: Types.ObjectId[]
+};
+
+export async function logTransaction(
+    issuerID: Types.ObjectId, receiverID: Types.ObjectId, points: number, type: TransactionType,
+    status: TransactionStatus, items: TransactionItems) {
+
+    const t = await Transaction.create({
+        issuerID: issuerID,
+        receiverID: receiverID,
+        points: points,
+        transactionType: type,
+        transactionStatus: status,
+        items: items
+    });
+
+    t.save();
+}
+
 enum Entities {
-    Merchant="merchant",
-    Client="Client"
+    Merchant = "merchant",
+    Client = "client"
 }
 
 router.get("/", async (req, res) => {
     try {
         const areq: AuthenticatedRequest = req as AuthenticatedRequest;
-        
+
         const search = await Transaction.find({
             $or: [
-                {issuerID: areq.user.id},
-                {receiverID: areq.user.id}
+                { issuerID: areq.user.id },
+                { receiverID: areq.user.id }
             ]
         });
-    
+
         const userType: Entities = areq.user.client ? Entities.Client : Entities.Merchant;
         const otherEntity = userType == Entities.Client ? Entities.Merchant : Entities.Client;
-    
+
         res.json(search.map(transaction => {
             let isIssuer: boolean;
-    
+
             /* eslint-disable indent */
             switch (transaction.transactionType) {
                 case TransactionType.PointAssignment:
@@ -39,7 +61,7 @@ router.get("/", async (req, res) => {
                     isIssuer = false;
                     break;
             }
-    
+
             return {
                 issuerID: {
                     id: transaction.issuerID,
