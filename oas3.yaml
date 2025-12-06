@@ -25,7 +25,6 @@ tags:
   - name: Transaction
     description: Operations made with transactions
 
-# TODO: login e registrazione SSO dopo aver capito come funziona...
 paths:
     /login:
         summary: Login with credentials
@@ -50,6 +49,45 @@ paths:
             responses:
                 "401":
                     description: Invalid credentials
+                "200":
+                    description: User logged in successfully
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    token:
+                                        type: string
+                                        description: The JWT token
+                    headers:
+                        'Location':
+                            description: Link to the default page for the user
+                            schema:
+                                type: string
+        
+    /login/SSO:
+        summary: Login with Google SSO
+        post:
+            summary: Send the login request
+            tags:
+              - Client
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                token:
+                                    type: string
+                                    description: The Google SSO login token
+                                    example: "Google SSO Token"
+                            required:
+                              - token
+            responses:
+                "400":
+                    description: Invalid login token
+                "401":
+                    description: Invalid information retreived from token
                 "200":
                     description: User logged in successfully
                     content:
@@ -94,6 +132,38 @@ paths:
                     description: The email is already in use
                 "400":
                     description: The input data is not valid
+                "201":
+                    # Non serve location header siccome sappiamo che si è registrato un cliente,
+                    # e quindi sappiamo anche la sua landing page
+                    description: Account created successfully
+    /register/client/SSO:
+        summary: Register a client type user with Google SSO
+        post:
+            tags:
+              - User Actions
+            summary: Send a registration request for a client type user with Google SSO login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                token:
+                                    type: string
+                                    description: The Google SSO login token
+                                    example: "token"
+                            required:
+                              - token
+                                
+            responses:
+                "422":
+                    description: The email is already in use with a local credential type account
+                "409":
+                    description: The email is already in use with an SSO type account
+                "400":
+                    description: The data received from the token is not valid
+                "401":
+                    description: The inserted token is not valid
                 "201":
                     # Non serve location header siccome sappiamo che si è registrato un cliente,
                     # e quindi sappiamo anche la sua landing page
