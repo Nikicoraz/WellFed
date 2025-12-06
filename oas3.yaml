@@ -292,18 +292,14 @@ paths:
                     type: string
                     description: The text query to search for a shop or product
               - in: query
-                name: filters
+                name: filter
                 required: false
                 schema:
-                    type: array
-                    description: The filters to apply to the search (eg. distance)
-                    # TODO: Scrivere i filtri della ricerca che abbiamo implementato
-                    items:
-                        type: string
-                        enum:
-                        - A
-                        - B
-                        - C
+                    type: string
+                    description: The filter to apply to the search
+                    enum:
+                    - products
+                    - shops
 
             responses:
                 "200":

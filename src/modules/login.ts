@@ -56,7 +56,7 @@ router.post("", async(req, res) => {
 
         
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
-        res.json({token: token}).send();
+        res.json({token: token});
     } catch (e) {
         console.error(e);
         if (e instanceof TypeError) {
