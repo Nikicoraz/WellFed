@@ -9,6 +9,7 @@ import registration from "./modules/registration.js";
 import shops from "./modules/shops.js";
 import shopsAuth from "./modules/shopsAuth.js";
 import tokenChecker from './middleware/tokenChecker.js';
+import transactions from './modules/transactions.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/v1/client/", client);
 app.use("/api/v1/shops/", shopsAuth);
 app.use("/api/v1/QRCodes/", qrcode);
 app.use("/api/v1/notifications/", notifications);
+app.use("/api/v1/transactions/", transactions);
 app.use(helloExample);
 
 export default app;

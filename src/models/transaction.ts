@@ -28,4 +28,7 @@ export default mongoose.model("Transaction", new Schema({
         enum: Object.values(TransactionStatus)
     },
     items: TransactionItems
+}).index({
+    issuerID: 1,
+    receiverID: 1
 }));
