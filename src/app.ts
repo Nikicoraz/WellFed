@@ -6,6 +6,7 @@ import login from "./modules/login.js";
 import notifications from './modules/notifications.js';
 import qrcode from "./modules/qrcode.js";
 import registration from "./modules/registration.js";
+import ricerca from "./modules/ricerca.js";
 import shops from "./modules/shops.js";
 import shopsAuth from "./modules/shopsAuth.js";
 import tokenChecker from './middleware/tokenChecker.js';
@@ -20,6 +21,7 @@ app.use(cors());
 app.use("/api/v1/register/", registration);
 app.use("/api/v1/login/", login);
 app.use("/api/v1/shops/", shops);
+app.use("/api/v1/search", ricerca);
 
 // all protected API from here
 app.use(tokenChecker);
