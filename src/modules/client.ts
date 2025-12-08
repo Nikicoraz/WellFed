@@ -23,7 +23,7 @@ router.get("/", clientOnly, async(req, res) => {
             id: user._id,
             email: user.email,
             points: user.points
-        }).send();
+        });
     } catch (e) {
         console.error(e);
         res.sendStatus(401);

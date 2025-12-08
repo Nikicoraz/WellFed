@@ -19,4 +19,6 @@ export default mongoose.model("Merchant", new Schema({
             ref: "Prize",
         } 
     ]
+}).index({
+    name: "text"
 }), "Merchants");

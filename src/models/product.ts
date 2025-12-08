@@ -6,4 +6,6 @@ export default mongoose.model("Product", new Schema({
     origin: String,
     image: String,
     points: Number
+}).index({
+    name: 'text'
 }), "Products");
