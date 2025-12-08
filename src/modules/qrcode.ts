@@ -1,3 +1,4 @@
+import { TransactionStatus, TransactionType } from "../models/transaction.js";
 import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
@@ -7,6 +8,7 @@ import type { Types } from "mongoose";
 import clientOnly from "../middleware/clientOnly.js";
 import express from "express";
 import jwt from "jsonwebtoken";
+import { logTransaction } from "./transactions.js";
 import merchantOnly from '../middleware/merchantOnly.js';
 import qrcode from "qrcode";
 
@@ -80,8 +82,13 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
 
         // Il token scade in 2 minuti
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
+        console.log(token);
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
+            if (err) {
+                console.error(err);
+                return res.sendStatus(500);
+            }
             addPendingToken(token);
             res.send(code);
         });
@@ -107,6 +114,10 @@ router.post("/redeemPrize", clientOnly, (req, res) => {
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
+            if (err) {
+                console.error(err);
+                return res.sendStatus(500);
+            }
             addPendingToken(token);
             res.send(code);
         });
@@ -132,8 +143,12 @@ router.post("/scanned", async(req, res) => {
 
         if (qrPayload.type == QRTypes.Assignment && authReq.user.client) {
             const clientID = authReq.user.id;
-            const productList: Types.ObjectId[] = (qrPayload as AssignmentQR).productQuantityList.map((e) => {
-                return e.productID;
+            const productQuantityList = (qrPayload as AssignmentQR).productQuantityList.map((e) => {
+                return {product: e.productID, quantity: e.quantity};
+            });
+
+            const productOnlyList: Types.ObjectId[] = productQuantityList.map(e => {
+                return e.product;
             });
 
             const shopID = (qrPayload as AssignmentQR).shopID;
@@ -141,7 +156,7 @@ router.post("/scanned", async(req, res) => {
 
             const shop = await Merchant.findOne({
                 _id: shopID,
-                products: {$all: productList}
+                products: {$all: productOnlyList}
             });
 
             // Se non sono presenti tutti i prodotti della richiesta nel negozio del mercante
@@ -162,6 +177,12 @@ router.post("/scanned", async(req, res) => {
             const oldPoints: number = client.get(pointsString) || 0;
             client.set(pointsString, oldPoints + points);
             client.save();
+
+            // Non serve aspettare la fine della funzione
+            logTransaction(clientID, shopID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
+                prizes: [],
+                products: productQuantityList
+            });
 
             // Update finished
 
@@ -200,6 +221,10 @@ router.post("/scanned", async(req, res) => {
             const currentPoints: number = client.get(pointPath);
             client.set(pointPath, currentPoints - prize.points!);
             client.save();
+            logTransaction(clientID, shopID, prize.points!, TransactionType.PrizeRedeem, TransactionStatus.Success, {
+                prizes: [prizeID],
+                products: []
+            });
 
         } else {
             return res.sendStatus(400);
