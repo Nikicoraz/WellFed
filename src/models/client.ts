@@ -4,6 +4,7 @@ export default mongoose.model("Client", new Schema({
     username: String,
     email: String,
     password: String,
+    SSO: Boolean,
     points: {
         type: Map,
         of: Number

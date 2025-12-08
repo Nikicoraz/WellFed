@@ -1,5 +1,6 @@
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
+import { OAuth2Client } from "google-auth-library";
 import argon from "argon2";
 import express from "express";
 import imageUtil from "../middleware/imageUtil.js";
@@ -14,23 +15,24 @@ router.post("/client", async(req, res) => {
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
     
-        if (username != "" && email.match(simpleEmailRegex) && password != "") {
-            const hashedPassword = await argon.hash(password);
+        if (username == "" || !email.match(simpleEmailRegex) || password == "") {
+            return res.sendStatus(400);
+        }
 
-            const client = new Client({
-                username: username,
-                password: hashedPassword,
-                email: email,
-            });
-    
-            if ((await Client.find({email: email}).exec()).length == 0 && (await Client.find({username: username}).exec()).length == 0) {
-                await client.save();
-                res.sendStatus(201);
-            } else {
-                res.sendStatus(409);
-            }
+        const hashedPassword = await argon.hash(password);
+
+        const client = new Client({
+            username: username,
+            password: hashedPassword,
+            email: email,
+            SSO: false,
+        });
+
+        if (!(await Client.findOne({email: email})) && !(await Client.findOne({username: username}))) {
+            await client.save();
+            res.sendStatus(201);
         } else {
-            res.sendStatus(400);
+            res.sendStatus(409);
         }
     } catch (e) {
         // Nel caso non riesca ad accedere al body oppure al fare il trim alle opzioni, allora
@@ -40,6 +42,65 @@ router.post("/client", async(req, res) => {
             res.sendStatus(400);
         } else {
             res.sendStatus(500);
+        }
+    }
+});
+
+router.post("/client/SSO", async(req, res) => {
+    const client = new OAuth2Client();
+    try {
+        const token = req.body.token.trim();
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID!,
+        });
+
+        if (!ticket) {
+            return res.sendStatus(401);
+        }
+
+        const payload = ticket.getPayload();
+
+        if (!payload) {
+            return res.sendStatus(401);
+        }
+
+        const email = payload["email"];
+        const username = payload["given_name"];
+
+        if (!email || !username) {
+            return res.sendStatus(400);
+        }
+
+        const user = await Client.findOne({
+            email: email
+        });
+
+        if (user && user.SSO) {
+            return res.sendStatus(422); // Esiste già un account con credenziali locali
+        }
+
+        if (user && !user.SSO) {
+            return res.sendStatus(409); // Esiste già l'account
+        }
+        
+        const newClient = new Client({
+            username: username,
+            password: "",
+            email: email,
+            SSO: true,
+        });
+
+        newClient.save();
+        res.sendStatus(201);
+    } catch (e) {
+        // Nel caso non riesca ad accedere al body oppure al fare il trim alle opzioni, allora
+        // è stata inviata una richiesta non valida
+        console.error(e);
+        if (e instanceof TypeError) {
+            res.sendStatus(400);
+        } else {
+            res.sendStatus(401);
         }
     }
 });
