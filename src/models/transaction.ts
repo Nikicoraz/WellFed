@@ -11,7 +11,10 @@ export enum TransactionStatus{
 }
 
 export const TransactionItems = new Schema({
-    products: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+    products: [{
+        product: { type: Schema.Types.ObjectId, ref: "Product" },
+        quantity: Number
+    }],
     prizes: [{ type: Schema.Types.ObjectId, ref: "Prize" }]
 }, { _id: false });
 

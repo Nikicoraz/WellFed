@@ -7,7 +7,10 @@ import express from "express";
 const router = express.Router();
 
 export interface TransactionItems {
-    products: Types.ObjectId[],
+    products: {
+        product: Types.ObjectId,
+        quantity: number
+    }[],
     prizes: Types.ObjectId[]
 };
 
@@ -72,8 +75,8 @@ router.get("/", async (req, res) => {
                     type: isIssuer ? otherEntity : userType
                 },
                 points: transaction.points,
-                transactionType: transaction.transactionType?.toString(),
-                transactionStatus: transaction.transactionStatus?.toString(),
+                transactionType: transaction.transactionType!.toString(),
+                transactionStatus: transaction.transactionStatus!.toString(),
                 items: transaction.items
             };
         }));

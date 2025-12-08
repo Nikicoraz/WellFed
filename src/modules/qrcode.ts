@@ -82,6 +82,7 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
 
         // Il token scade in 2 minuti
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
+        console.log(token);
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
             if (err) {
@@ -142,8 +143,12 @@ router.post("/scanned", async(req, res) => {
 
         if (qrPayload.type == QRTypes.Assignment && authReq.user.client) {
             const clientID = authReq.user.id;
-            const productList: Types.ObjectId[] = (qrPayload as AssignmentQR).productQuantityList.map((e) => {
-                return e.productID;
+            const productQuantityList = (qrPayload as AssignmentQR).productQuantityList.map((e) => {
+                return {product: e.productID, quantity: e.quantity};
+            });
+
+            const productOnlyList: Types.ObjectId[] = productQuantityList.map(e => {
+                return e.product;
             });
 
             const shopID = (qrPayload as AssignmentQR).shopID;
@@ -151,7 +156,7 @@ router.post("/scanned", async(req, res) => {
 
             const shop = await Merchant.findOne({
                 _id: shopID,
-                products: {$all: productList}
+                products: {$all: productOnlyList}
             });
 
             // Se non sono presenti tutti i prodotti della richiesta nel negozio del mercante
@@ -176,7 +181,7 @@ router.post("/scanned", async(req, res) => {
             // Non serve aspettare la fine della funzione
             logTransaction(clientID, shopID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
                 prizes: [],
-                products: productList
+                products: productQuantityList
             });
 
             // Update finished
