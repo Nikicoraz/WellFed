@@ -16,7 +16,9 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({
+    exposedHeaders: ['Location']
+}));
 
 // Hello example is protected by authentication
 app.use("/api/v1/register/", registration);
