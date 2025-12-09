@@ -25,7 +25,7 @@ app.use("/api/v1/shops/", shops);
 app.use("/api/v1/search", ricerca);
 
 // all protected API from here
-app.use(tokenChecker);
+app.use("/api/v1/", tokenChecker);
 
 app.use("/api/v1/client/", client);
 app.use("/api/v1/shops/", shopsAuth);
@@ -33,5 +33,10 @@ app.use("/api/v1/QRCodes/", qrcode);
 app.use("/api/v1/notifications/", notifications);
 app.use("/api/v1/transactions/", transactions);
 app.use(helloExample);
+
+// 404 handler
+app.use((req, res) => {
+    res.sendStatus(404);
+});
 
 export default app;
