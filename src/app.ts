@@ -36,6 +36,8 @@ app.use("/api/v1/notifications/", notifications);
 app.use("/api/v1/transactions/", transactions);
 app.use(helloExample);
 
+app.use('/public', express.static('./public'));
+
 // 404 handler
 app.use((req, res) => {
     res.sendStatus(404);
