@@ -8,7 +8,7 @@ info:
 servers:
     - url: http://127.0.0.1:8000/api/v1
       description: Local development server
-    - url: https://changeme.server/api/v1
+    - url: https://wellfed.onrender.com/api/v1
       description: Production server
 
 tags:
