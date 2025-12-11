@@ -8,6 +8,7 @@ import imageUtil from "../middleware/imageUtil.js";
 const router = express.Router();
 const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
 const partitaIVARegex = /(IT)? ?\d{11}/;
+const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*\-_]).{8,40}$/;
 
 router.post("/client", async(req, res) => {
     try {
@@ -16,6 +17,11 @@ router.post("/client", async(req, res) => {
         const password: string = req.body.password.trim();
     
         if (username == "" || !email.match(simpleEmailRegex) || password == "") {
+            return res.sendStatus(400);
+        }
+
+        // La password non rispetta i requisiti minimi di complessità
+        if (!password.match(passwordRegex)) {
             return res.sendStatus(400);
         }
 
@@ -132,6 +138,11 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
             res.sendStatus(403);
             imageUtil.deleteImage(uploadedImage);
             return;
+        }
+
+        // La password non rispetta i criteri di sicurezza
+        if (!password.match(passwordRegex)) {
+            return res.sendStatus(400);
         }
 
         // Campi nome e email gia' presenti
