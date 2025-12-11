@@ -24,7 +24,8 @@ interface Product {
     description: string,
     origin: string,
     image: string,
-    points: number
+    points: number,
+    shopID: Types.ObjectId
 };
 
 const emptyResult = {
@@ -32,7 +33,6 @@ const emptyResult = {
     products: [] as Product[]
 };
 
-// TODO: Mappa oggetti a interfaccia
 router.get("/", async(req, res) => {
     try {
         const query = req.query.query;
@@ -59,7 +59,8 @@ router.get("/", async(req, res) => {
                     description: e.description!,
                     origin: e.origin!,
                     image: e.image!,
-                    points: e.points!
+                    points: e.points!,
+                    shopID: e.shopID!
                 };
             });
         }

@@ -5,7 +5,8 @@ export default mongoose.model("Product", new Schema({
     description: String,
     origin: String,
     image: String,
-    points: Number
+    points: Number,
+    shopID: { type: Schema.Types.ObjectId, ref: "Merchant", index: true }
 }).index({
     name: 'text'
 }), "Products");

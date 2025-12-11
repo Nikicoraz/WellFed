@@ -934,8 +934,14 @@ components:
                 products:
                     type: array
                     items:
-                        $ref: "#/components/schemas/Product"
-
+                        allOf: 
+                          - $ref: "#/components/schemas/Product"
+                          - type: object
+                            properties:
+                                shopID:
+                                    type: string
+                            required:
+                              - shopID
         Prize:
             type: object
             properties:
