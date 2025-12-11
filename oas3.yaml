@@ -802,6 +802,10 @@ components:
                     type: string
                     description: The ID of the client
                     example: "1234567b213f1223"
+                username:
+                    type: string
+                    description: The username of the client
+                    example: "MRossi"
                 email:
                     type: string
                     description: The email of the client

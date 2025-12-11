@@ -21,6 +21,7 @@ router.get("/", clientOnly, async(req, res) => {
     
         res.json({
             id: user._id,
+            username: user.username,
             email: user.email,
             points: user.points
         });
