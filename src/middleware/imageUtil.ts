@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const maxImageSize = 1024 * 1024 * 8;
+
 const uploadImage = (imageDir: string) => { 
     return multer({
         storage: multer.diskStorage({
@@ -28,7 +30,7 @@ const uploadImage = (imageDir: string) => {
         },
 
         limits: {
-            fileSize: 1024 * 1024,
+            fileSize: maxImageSize,
         }
     });
 };
