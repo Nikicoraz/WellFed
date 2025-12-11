@@ -33,6 +33,7 @@ router.post("/:shopID/products", imageUtil.uploadImage('products').single('image
             origin: origin.trim(),
             image: uploadedImage.filename,
             points: points ?? 0,
+            shopID: req.params.shopID
         });
 
         await newProduct.save();
