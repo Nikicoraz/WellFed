@@ -58,7 +58,7 @@ router.get("/", async(req, res) => {
                     name: e.name!,
                     description: e.description!,
                     origin: e.origin!,
-                    image: e.image!,
+                    image: "/public/images/products/" + e.image!,
                     points: e.points!,
                     shopID: e.shopID!
                 };
@@ -73,7 +73,7 @@ router.get("/", async(req, res) => {
                     id: e._id,
                     name: e.name!,
                     address: e.address!,
-                    image: e.image!
+                    image: "/public/images/merchants/" + e.image!
                 };
             });
         }
