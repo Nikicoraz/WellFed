@@ -82,7 +82,6 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
 
         // Il token scade in 2 minuti
         const token = jwt.sign({...payload}, process.env.PRIVATE_KEY!, {expiresIn: "2m"});
-        console.log(token);
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
             if (err) {
