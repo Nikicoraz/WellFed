@@ -34,12 +34,13 @@ router.post("/client", async(req, res) => {
             SSO: false,
         });
 
-        if (!(await Client.findOne({email: email})) && !(await Client.findOne({username: username}))) {
-            await client.save();
-            res.sendStatus(201);
-        } else {
+        if (await Client.findOne({email: email}) || await Client.findOne({username: username}) || await Merchant.findOne({email: email})) {
             res.sendStatus(409);
+            return;
         }
+
+        await client.save();
+        res.sendStatus(201);
     } catch (e) {
         // Nel caso non riesca ad accedere al body oppure al fare il trim alle opzioni, allora
         // è stata inviata una richiesta non valida
@@ -82,11 +83,15 @@ router.post("/client/SSO", async(req, res) => {
             email: email
         });
 
-        if (user && user.SSO) {
+        const merchant = await Merchant.findOne({
+            email: email
+        });
+
+        if ((user && !user.SSO) || merchant) {
             return res.sendStatus(422); // Esiste già un account con credenziali locali
         }
 
-        if (user && !user.SSO) {
+        if (user && user.SSO) {
             return res.sendStatus(409); // Esiste già l'account
         }
         
@@ -146,7 +151,7 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
         }
 
         // Campi nome e email gia' presenti
-        if ((await Merchant.find({name: name}).exec()).length > 0 || (await Merchant.find({email: email}).exec()).length > 0) {
+        if ((await Merchant.find({name: name}).exec()).length > 0 || (await Merchant.find({email: email}).exec()).length > 0 || (await Client.findOne({email: email}))) {
             res.sendStatus(409);
             imageUtil.deleteImage(uploadedImage);
             return;
