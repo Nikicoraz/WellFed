@@ -7,7 +7,8 @@
     "lint": "eslint",
     "build": "npm run lint && tsc",
     "start": "npm run build && node dist/index.js",
-    "dev": "nodemon -e ts --watch index.ts --watch './src/*' --exec \"npm run start\""
+    "dev": "nodemon -e ts --watch index.ts --watch './src/*' --exec \"npm run start\"",
+    "test": "echo \"Non sono ancora stati definiti i casi di test\""
   },
   "keywords": [],
   "type": "module",
