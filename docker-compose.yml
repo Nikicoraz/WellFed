@@ -1,0 +1,39 @@
+services:
+    frontend:
+        build: 
+            context: ./frontend/
+            args:
+                - VITE_BACKEND_URL=http://localhost:8000
+                - VITE_BACKEND_URL_API=http://localhost:8000/api/v1
+                - VITE_GOOGLE_CLIENT_ID=changeme
+        depends_on:
+            - backend
+        ports:
+            - 5173:80
+
+    backend:
+        build: .
+        environment:
+            - DB_USER=admin
+            - DB_PASSWORD=root
+            - DB_URL=mongo
+            - PORT=8000
+            - ADMIN=true
+            - PRIVATE_KEY=changeme
+            - GOOGLE_CLIENT_ID=changeme
+        ports:
+            - 8000:8000
+        restart: unless-stopped
+        depends_on: 
+            - mongo
+
+    mongo:
+        image: mongo:latest
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: root
+        ports:
+          - 27017:27017
+        # Uncomment this to make the db persistent
+        # volumes:
+        #   - ./db:/data/db
