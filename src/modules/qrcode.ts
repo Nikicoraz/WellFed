@@ -178,7 +178,7 @@ router.post("/scanned", async(req, res) => {
             client.save();
 
             // Non serve aspettare la fine della funzione
-            logTransaction(clientID, shopID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
+            logTransaction(shopID, clientID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
                 prizes: [],
                 products: productQuantityList
             }, new Date());
