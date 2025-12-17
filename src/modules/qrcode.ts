@@ -181,7 +181,7 @@ router.post("/scanned", async(req, res) => {
             logTransaction(clientID, shopID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
                 prizes: [],
                 products: productQuantityList
-            });
+            }, new Date());
 
             // Update finished
 
@@ -223,7 +223,7 @@ router.post("/scanned", async(req, res) => {
             logTransaction(clientID, shopID, prize.points!, TransactionType.PrizeRedeem, TransactionStatus.Success, {
                 prizes: [prizeID],
                 products: []
-            });
+            }, new Date());
 
         } else {
             return res.sendStatus(400);

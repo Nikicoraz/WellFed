@@ -16,7 +16,7 @@ export interface TransactionItems {
 
 export async function logTransaction(
     issuerID: Types.ObjectId, receiverID: Types.ObjectId, points: number, type: TransactionType,
-    status: TransactionStatus, items: TransactionItems) {
+    status: TransactionStatus, items: TransactionItems, date: Date) {
 
     const t = await Transaction.create({
         issuerID: issuerID,
@@ -24,7 +24,8 @@ export async function logTransaction(
         points: points,
         transactionType: type,
         transactionStatus: status,
-        items: items
+        items: items,
+        issuingDate: date
     });
 
     t.save();
@@ -77,7 +78,8 @@ router.get("/", async (req, res) => {
                 points: transaction.points,
                 transactionType: transaction.transactionType!.toString(),
                 transactionStatus: transaction.transactionStatus!.toString(),
-                items: transaction.items
+                items: transaction.items,
+                issuingDate: transaction.issuingDate
             };
         }));
     } catch (e) {

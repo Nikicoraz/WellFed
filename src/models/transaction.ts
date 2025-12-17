@@ -30,7 +30,8 @@ export default mongoose.model("Transaction", new Schema({
         type: String,
         enum: Object.values(TransactionStatus)
     },
-    items: TransactionItems
+    items: TransactionItems,
+    issuingDate: Date
 }).index({
     issuerID: 1,
     receiverID: 1
