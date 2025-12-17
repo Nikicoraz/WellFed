@@ -31,7 +31,7 @@ export default mongoose.model("Transaction", new Schema({
         enum: Object.values(TransactionStatus)
     },
     items: TransactionItems,
-    date: Date
+    issuingDate: Date
 }).index({
     issuerID: 1,
     receiverID: 1

@@ -1040,22 +1040,21 @@ components:
                             items:
                                 type: object
                                 properties:
-                                    id:
+                                    product:
                                         type: string
                                         description: ID of the product
                                     quantity:
                                         type: number
                                         description: The quantity of the product
 
-                                    required:
-                                        - id
-                                        - quantity
+                                required:
+                                    - product
+                                    - quantity
                         prizes:
                             type: array
                             items:
-                                id:
-                                    type: string
-                                    description: ID of the prize
+                                type: string
+                                description: ID of the prize
 
             required:
                 - issuerID
@@ -1063,5 +1062,6 @@ components:
                 - points
                 - transactionType
                 - transactionStatus
+                - issuingDate
                 - items
 

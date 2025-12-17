@@ -24,8 +24,8 @@ export async function logTransaction(
         points: points,
         transactionType: type,
         transactionStatus: status,
-        items: items
-        date: date
+        items: items,
+        issuingDate: date
     });
 
     t.save();
@@ -79,7 +79,7 @@ router.get("/", async (req, res) => {
                 transactionType: transaction.transactionType!.toString(),
                 transactionStatus: transaction.transactionStatus!.toString(),
                 items: transaction.items,
-                date: transaction.date
+                issuingDate: transaction.issuingDate
             };
         }));
     } catch (e) {
