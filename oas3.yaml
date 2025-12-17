@@ -786,7 +786,9 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/Transaction"
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Transaction"
 components:
     securitySchemes:
       BearerAuth:
@@ -973,78 +975,93 @@ components:
               - image
               - points
         Transaction:
-            type: array
-            items:
-                type: object
-                properties:
-                    issuerID:
-                        type: object
-                        description: The the issuer properties
-                        properties:
-                            id: 
-                                type: string
-                                description: the ID of the issuer
-                            type:
-                                type: string
-                                description: The user type of the issuer
-                                enum: 
-                                    - client
-                                    - merchant
-                        required:
-                            - id
-                            - type
-                    receiverID:
-                        type: object
-                        description: The the receiver properties
-                        properties:
-                            id: 
-                                type: string
-                                description: the ID of the receiver
-                            type:
-                                type: string
-                                description: The user type of the receiver
-                                enum: 
-                                    - client
-                                    - merchant
-                                example: merchant
-                        required:
-                            - id
-                            - type
-                    points:
-                        type: integer
-                        description: The number of points involved in the transaction
-                        minimum: 1
-                    transactionType:
-                        type: string
-                        description: The transaction type
-                        enum:
-                            - PointAssignment
-                            - PrizeRedeem
-                    transactionStatus:
-                        type: string
-                        description: The status of the transaction
-                        enum:
-                            - Success
-                            - Insuccess
-                    items:
-                        type: object
-                        properties:
-                            products:
-                                type: array
-                                items:
-                                    type: string
-                                    description: ID of the products
-                            prizes:
-                                type: array
-                                items:
-                                    type: string
-                                    description: ID of the prizes
+            type: object
+            properties:
+                issuerID:
+                    type: object
+                    description: The the issuer properties
+                    properties:
+                        id: 
+                            type: string
+                            description: the ID of the issuer
+                        type:
+                            type: string
+                            description: The user type of the issuer
+                            enum: 
+                                - client
+                                - merchant
+                    required:
+                        - id
+                        - type
+                receiverID:
+                    type: object
+                    description: The the receiver properties
+                    properties:
+                        id: 
+                            type: string
+                            description: the ID of the receiver
+                        type:
+                            type: string
+                            description: The user type of the receiver
+                            enum: 
+                                - client
+                                - merchant
+                            example: merchant
+                    required:
+                        - id
+                        - type
+                points:
+                    type: integer
+                    description: The number of points involved in the transaction
+                    minimum: 1
+                transactionType:
+                    type: string
+                    description: The transaction type
+                    enum:
+                        - PointAssignment
+                        - PrizeRedeem
+                transactionStatus:
+                    type: string
+                    description: The status of the transaction
+                    enum:
+                        - Success
+                        - Insuccess
 
-                required:
-                    - issuerID
-                    - receiverID
-                    - points
-                    - transactionType
-                    - transactionStatus
-                    - items
+                issuingDate:
+                    type: string
+                    format: date
+                    description: The date when the transaction was issued
+                        
+                items:
+                    type: object
+                    properties:
+                        products:
+                            type: array
+                            items:
+                                type: object
+                                properties:
+                                    id:
+                                        type: string
+                                        description: ID of the product
+                                    quantity:
+                                        type: number
+                                        description: The quantity of the product
+
+                                    required:
+                                        - id
+                                        - quantity
+                        prizes:
+                            type: array
+                            items:
+                                id:
+                                    type: string
+                                    description: ID of the prize
+
+            required:
+                - issuerID
+                - receiverID
+                - points
+                - transactionType
+                - transactionStatus
+                - items
 
