@@ -1,3 +1,4 @@
+import apiDocs from "./modules/apiDocs.js";
 import client from './modules/client.js';
 import cors from 'cors';
 import express from "express";
@@ -19,6 +20,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors({
     exposedHeaders: ['Location']
 }));
+
+app.use("/api-docs", apiDocs);
 
 // Hello example is protected by authentication
 app.use("/api/v1/register/", registration);
