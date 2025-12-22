@@ -253,7 +253,7 @@ router.patch("/:shopID/prizes/:prizeID", imageUtil.uploadImage('prizes').single(
         // Negozio il cui prodotto e' da aggiornare
         const shop = await Merchant.findOne({ 
             _id: shopID!, 
-            prize: prizeID!
+            prizes: prizeID!
         }).exec();
 
         // Non esiste il negozio 
@@ -299,7 +299,6 @@ router.patch("/:shopID/prizes/:prizeID", imageUtil.uploadImage('prizes').single(
         // Controlla e aggiorna i campi
         checkField(name, updateCallBackBuilder("name"));
         checkField(description, updateCallBackBuilder("description"));
-        checkField(origin, updateCallBackBuilder("origin"));
  
         if (points) {
             updatedPrize.points = points;
