@@ -109,7 +109,7 @@ router.post("/client/SSO", async(req, res) => {
         // è stata inviata una richiesta non valida
         console.error(e);
         if (e instanceof TypeError) {
-            res.sendStatus(400);
+            res.sendStatus(401);
         } else {
             res.sendStatus(401);
         }

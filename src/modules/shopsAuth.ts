@@ -27,6 +27,13 @@ router.post("/:shopID/products", imageUtil.uploadImage('products').single('image
             return;
         }
 
+        const shop = await Merchant.findById(req.params.shopId).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
+            return;
+        }
+        
         const newProduct = new Product({
             name: name.trim(),
             description: description.trim(),
@@ -187,13 +194,8 @@ router.delete("/:shopID/products/:productID", async (req, res) => {
         res.sendStatus(200);
     } catch (e) {
         console.error(e);
-        imageUtil.deleteImage(req.file);
 
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 
@@ -214,6 +216,13 @@ router.post("/:shopID/prizes", imageUtil.uploadImage('prizes').single('image'), 
         if (name == "" || description == "") {
             res.sendStatus(400);
             imageUtil.deleteImage(uploadedImage);
+            return;
+        }
+
+        const shop = await Merchant.findById(req.params.shopId).exec();
+
+        if (!shop) {
+            res.sendStatus(404);
             return;
         }
 
@@ -374,13 +383,7 @@ router.delete("/:shopID/prizes/:prizeID", async (req, res) => {
         res.sendStatus(200);
     } catch (e) {
         console.error(e);
-        imageUtil.deleteImage(req.file);
-
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 
