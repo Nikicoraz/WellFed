@@ -5,5 +5,5 @@ export default {
     ],
     verbose: true,
     collectCoverage: true,
-    setupFilesAfterEnv: ["./dist/src/test/jest.setup.js"]
+    setupFilesAfterEnv: ["./dist/src/__test__/jest.setup.js"]
 };
