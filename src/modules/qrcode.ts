@@ -218,6 +218,11 @@ router.post("/scanned", async(req, res) => {
 
             const pointPath = `points.${shopID}`;
             const currentPoints: number = client.get(pointPath);
+            if (currentPoints - prize.points! < 0) {
+                res.sendStatus(402);
+                return;
+            }
+            
             client.set(pointPath, currentPoints - prize.points!);
             client.save();
             logTransaction(clientID, shopID, prize.points!, TransactionType.PrizeRedeem, TransactionStatus.Success, {

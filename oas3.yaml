@@ -325,7 +325,7 @@ paths:
                 "404":
                     description: Notification not found
                 "401":
-                    description: The user is not logged in or cannot access the notification
+                    description: The user is not logged in
                 "200":
                     description: The notification has been marked as read
 
@@ -344,7 +344,7 @@ paths:
                 description: The notification ID to delete
             responses:
                 "401":
-                    description: The user is not logged in or cannot access the notification
+                    description: The user is not logged in
                 "404":
                     description: The notification was not found
                 "200":
@@ -725,7 +725,7 @@ paths:
                 "401":
                     description: The user is not logged in, so it cannot generate
                 "200":
-                    description: The QR code is generated
+                    description: The image of the generated QR code
                     content:
                         image/jpeg:
                             schema:
@@ -758,7 +758,7 @@ paths:
                 "401":
                     description: The user is not logged in, so it cannot generate
                 "200":
-                    description: The QR code is generated
+                    description: The image of the generated QR code
                     content:
                         image/jpeg:
                             schema:
@@ -788,6 +788,8 @@ paths:
                     description: The QR code is invalid
                 "401":
                     description: The user is not authenticated
+                "402":
+                    description: The user does not have enough points
     
     /transactions:
         get:
@@ -797,6 +799,8 @@ paths:
             tags:
               - Transaction
             responses:
+                "401":
+                    description: The user is not authenticated
                 "200":
                     description: An array of transactions
                     content:
@@ -900,6 +904,10 @@ components:
                 viewed:
                     type: boolean
                     description: If the user has already opened and read the notification
+                title:
+                    type: string
+                    description: The title of the notification
+                    example: A new login!
                 notificationMessage:
                     type: string
                     description: An optional message to display in the notification (eg. when a new offer is out)
