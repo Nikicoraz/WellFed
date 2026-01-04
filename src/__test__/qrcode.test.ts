@@ -1,10 +1,6 @@
 import app from '../app.js';
 import request from 'supertest';
 
-//Jest ha problemi con i timer, per far passare la test suite eseguire 
-// npm test -- --detectOpenHandles
-// finché non trovo una soluzione
-
 let merchantToken: string;
 let clientToken: string;
 let fakeProductId: string;
