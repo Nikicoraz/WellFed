@@ -43,7 +43,7 @@ router.get("/", async(req, res) => {
         }
 
         // Nel caso le query siano troppo lente, si può usare meglio l'indice
-        // impostando l'inizio della ricerca con '^'
+        // impostando l'inizio della ricerca con '^', però si perdono i risultati parziali
         const searchQuery = new RegExp(`${query}` as string, "i");
 
         // Spread operator per creare una copia

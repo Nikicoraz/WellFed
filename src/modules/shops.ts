@@ -6,7 +6,7 @@ import express from "express";
 const router = express.Router();
 const imagePath = "/public/images/";
 
-router.get("", async(req, res) => {
+router.get("", async(_, res) => {
     try {
         const shops = await Merchant.find().exec();
         res.json(shops.map((shop) => {
@@ -19,11 +19,7 @@ router.get("", async(req, res) => {
         }));
     } catch (e) {
         console.error(e);
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 
@@ -44,11 +40,7 @@ router.get("/:shopId", async (req, res) => {
         });
     } catch (e) {
         console.error(e);
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 
@@ -73,7 +65,7 @@ router.get("/:shopId/products", async (req, res) => {
             })
             .map((product) => {
                 return {
-                    id: product._id.toString(), // Usa '!' o controllo per Type safety in TS
+                    id: product._id.toString(),
                     name: product.name,
                     description: product.description,
                     origin: product.origin,
@@ -84,11 +76,7 @@ router.get("/:shopId/products", async (req, res) => {
         );
     } catch (e) {
         console.error(e);
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 
@@ -123,11 +111,7 @@ router.get("/:shopId/products/:productId", async (req, res) => {
         });
     } catch (e) {
         console.error(e);
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 
@@ -162,11 +146,7 @@ router.get("/:shopId/prizes", async (req, res) => {
         );
     } catch (e) {
         console.error(e);
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 
@@ -201,11 +181,7 @@ router.get("/:shopId/prizes/:prizeId", async (req, res) => {
 
     } catch (e) {
         console.error(e);
-        if (e instanceof TypeError) {
-            res.sendStatus(400);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(500);
     }
 });
 

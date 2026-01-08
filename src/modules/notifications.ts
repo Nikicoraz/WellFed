@@ -65,15 +65,9 @@ router.patch("/:id", clientOnly, async(req, res) => {
         const notificationID: string = req.params.id!;
         const areq = (req as AuthenticatedRequest).user;
 
-        const user = await Client.findById(areq.id);
-
-        if (!user) {
-            res.sendStatus(401);
-            return;
-        }
 
         const result = await Client.updateOne({ 
-            _id: user.id,
+            _id: areq.id,
             "notifications.notification": notificationID
         }, {
             $set: { "notifications.$.viewed": true }

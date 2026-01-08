@@ -78,8 +78,8 @@ router.get("/", async (req, res) => {
                 points: transaction.points,
                 transactionType: transaction.transactionType!.toString(),
                 transactionStatus: transaction.transactionStatus!.toString(),
+                issuingDate: transaction.issuingDate,
                 items: transaction.items,
-                issuingDate: transaction.issuingDate
             };
         }));
     } catch (e) {
