@@ -1,15 +1,13 @@
+import { type AuthenticatedRequest, clientOnly, merchantOnly } from "../middleware/authentication.js";
 import { TransactionStatus, TransactionType } from "../models/transaction.js";
-import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
 import Prize from "../models/prize.js";
 import Product from "../models/product.js";
 import type { Types } from "mongoose";
-import clientOnly from "../middleware/clientOnly.js";
 import express from "express";
 import jwt from "jsonwebtoken";
 import { logTransaction } from "./transactions.js";
-import merchantOnly from '../middleware/merchantOnly.js';
 import qrcode from "qrcode";
 
 const router = express.Router();

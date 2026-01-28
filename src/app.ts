@@ -2,7 +2,6 @@ import apiDocs from "./modules/apiDocs.js";
 import client from './modules/client.js';
 import cors from 'cors';
 import express from "express";
-import helloExample from "./hello_world_example.js";
 import login from "./modules/login.js";
 import notifications from './modules/notifications.js';
 import qrcode from "./modules/qrcode.js";
@@ -10,7 +9,7 @@ import registration from "./modules/registration.js";
 import ricerca from "./modules/search.js";
 import shops from "./modules/shops.js";
 import shopsAuth from "./modules/shopsAuth.js";
-import tokenChecker from './middleware/tokenChecker.js';
+import { tokenChecker } from "./middleware/authentication.js";
 import transactions from './modules/transactions.js';
 
 const app = express();
@@ -37,7 +36,6 @@ app.use("/api/v1/shops/", shopsAuth);
 app.use("/api/v1/QRCodes/", qrcode);
 app.use("/api/v1/notifications/", notifications);
 app.use("/api/v1/transactions/", transactions);
-app.use(helloExample);
 
 app.use('/public', express.static('./public'));
 

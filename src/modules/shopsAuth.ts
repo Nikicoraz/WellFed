@@ -27,7 +27,7 @@ router.post("/:shopID/products", imageUtil.uploadImage('products').single('image
             return;
         }
 
-        const shop = await Merchant.findById(req.params.shopId).exec();
+        const shop = await Merchant.findById(req.params.shopID).exec();
 
         if (!shop) {
             res.sendStatus(404);
@@ -219,7 +219,7 @@ router.post("/:shopID/prizes", imageUtil.uploadImage('prizes').single('image'), 
             return;
         }
 
-        const shop = await Merchant.findById(req.params.shopId).exec();
+        const shop = await Merchant.findById(req.params.shopID).exec();
 
         if (!shop) {
             res.sendStatus(404);
