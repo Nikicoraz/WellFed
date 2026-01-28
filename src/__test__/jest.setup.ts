@@ -13,7 +13,7 @@ beforeAll(async () => {
     await mongoose.connect(connectionString, connectOptions);
 });
 
-beforeEach(async () => {
+beforeAll(async () => {
     if (!mongoose.connection.db) {
         throw new Error('Database not initialized');
     }

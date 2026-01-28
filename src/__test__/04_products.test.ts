@@ -21,6 +21,8 @@ beforeAll(async () => {
 
     merchantToken = login.body.token;
     const location = login.headers.location;
+    
+    shopID = login.body.shopID;
     if (!location) throw new Error("Location header missing");
     const parts = location.split("/shop/");
     if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found in location");
@@ -31,11 +33,9 @@ beforeAll(async () => {
         email: 'cliente@test.com',
         password: 'Sicura!123#'
     });
-    
 });
 
 describe("Product Management", () => {
-
     it("4.0 Add new product - valid data", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
@@ -79,11 +79,10 @@ describe("Product Management", () => {
             .post('/api/v1/login')
             .send({
                 email: 'cliente@test.com',
-                password: 'Sicura!123#'
+                password: 'Sicura!123#',
+                SSO: false
             });
 
-        console.log(clientLogin.body.token);
-        
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${clientLogin.body.token}`)
@@ -108,5 +107,4 @@ describe("Product Management", () => {
 
         expect(res.status).toBe(404);
     });
-
 });
