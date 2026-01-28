@@ -1,8 +1,7 @@
-import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
+import { type AuthenticatedRequest, clientOnly } from "../middleware/authentication.js";
 import Client from "../models/client.js";
 import Notification from "../models/notification.js";
 import type { Types } from "mongoose";
-import clientOnly from "../middleware/clientOnly.js";
 import express from "express";
 
 const router = express.Router();
