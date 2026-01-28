@@ -25,7 +25,7 @@ describe('Login Controller', () => {
             password: 'Sicura!123#',
             SSO: false
         });
-
+        
         expect(res.status).toBe(200);
         expect(res.body.token).toBeDefined();
         expect(res.headers.location).toBe('/');

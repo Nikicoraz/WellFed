@@ -5,7 +5,7 @@ let merchantToken: string;
 let clientToken: string;
 let fakeProductId: string;
 
-beforeEach(async () => {
+beforeAll(async () => {
     await request(app)
         .post('/api/v1/register/merchant')
         .field('name', 'Shop')
@@ -40,12 +40,10 @@ beforeEach(async () => {
         });
 
     clientToken = clientLogin.body.token;
-
     fakeProductId = '507f1f77bcf86cd799439011';
 });
 
 describe('QR Code Controller', () => {
-
     it('3.0 Generazione codice QR con lista prodotti valida', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
@@ -101,5 +99,4 @@ describe('QR Code Controller', () => {
 
         expect(res.status).toBe(401);
     });
-
 });
