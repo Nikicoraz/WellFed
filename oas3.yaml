@@ -452,6 +452,8 @@ paths:
                     description: The product was added to the shop
                 "400":
                     description: The product had some invalid data
+                "401":
+                    description: The user is not authorized to add products in this shop
                 "404":
                     description: The shop was not found
         
@@ -525,6 +527,8 @@ paths:
                     description: The edit was successful
                 "400":
                     description: The new product attributes contain errors
+                "401":
+                    description: The user is not authorized to modify products in this shop
                 "404":
                     description: The product or shop was not found
         
@@ -537,6 +541,8 @@ paths:
             responses:
                 "200":
                     description: The product was deleted
+                "401":
+                    description: The user is not authorized to delete the product
                 "404":
                     description: The product or shop was not found
 
@@ -607,6 +613,8 @@ paths:
                     description: The prize was added to the shop
                 "400":
                     description: The prize had some invalid data
+                "401":
+                    description: The user is not authorized to add prizes to this shop
                 "404":
                     description: The shop was not found
         
@@ -678,6 +686,8 @@ paths:
                     description: The edit was successful
                 "400":
                     description: The new prize attributes contain errors
+                "401":
+                    description: The user is not authorized to modify the prizes in this shop
                 "404":
                     description: The prize or shop was not found
         
@@ -690,6 +700,8 @@ paths:
             responses:
                 "200":
                     description: The prize was deleted
+                "401":
+                    description: The user is not authorized to delete the prize
                 "404":
                     description: The prize or shop was not found
 

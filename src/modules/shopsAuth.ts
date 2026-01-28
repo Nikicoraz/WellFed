@@ -3,10 +3,11 @@ import Prize from "../models/prize.js";
 import Product from "../models/product.js";
 import express from "express";
 import imageUtil from "../middleware/imageUtil.js";
+import { shopOwnerOnly } from "../middleware/authentication.js";
 
 const router = express.Router();
 
-router.post("/:shopID/products", imageUtil.uploadImage('products').single('image'), async (req, res) => {
+router.post("/:shopID/products", shopOwnerOnly, imageUtil.uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
@@ -27,6 +28,7 @@ router.post("/:shopID/products", imageUtil.uploadImage('products').single('image
             return;
         }
 
+        // Controllo lo stesso se esiste il mercante, anche se dovrebbe essere garantito dal token
         const shop = await Merchant.findById(req.params.shopID).exec();
 
         if (!shop) {
@@ -60,7 +62,7 @@ router.post("/:shopID/products", imageUtil.uploadImage('products').single('image
     }
 });
 
-router.patch("/:shopID/products/:productID", imageUtil.uploadImage('products').single('image'), async (req, res) => {
+router.patch("/:shopID/products/:productID", shopOwnerOnly, imageUtil.uploadImage('products').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const { shopID, productID } = req.params;
@@ -150,9 +152,10 @@ router.patch("/:shopID/products/:productID", imageUtil.uploadImage('products').s
     }
 });
 
-router.delete("/:shopID/products/:productID", async (req, res) => {
+router.delete("/:shopID/products/:productID", shopOwnerOnly, async (req, res) => {
     try {
-        const { shopID, productID } = req.params;
+        const shopID = req.params.shopID!;
+        const productID = req.params.productID!;
 
         // Negozio il cui prodotto e' da eliminare
         const shop = await Merchant.findOne({ 
@@ -199,7 +202,7 @@ router.delete("/:shopID/products/:productID", async (req, res) => {
     }
 });
 
-router.post("/:shopID/prizes", imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
+router.post("/:shopID/prizes", shopOwnerOnly, imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const name: string = req.body.name.trim();
@@ -250,7 +253,7 @@ router.post("/:shopID/prizes", imageUtil.uploadImage('prizes').single('image'), 
     }
 });
 
-router.patch("/:shopID/prizes/:prizeID", imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
+router.patch("/:shopID/prizes/:prizeID", shopOwnerOnly, imageUtil.uploadImage('prizes').single('image'), async (req, res) => {
     try {
         const uploadedImage = req.file;
         const { shopID, prizeID } = req.params;
@@ -339,9 +342,10 @@ router.patch("/:shopID/prizes/:prizeID", imageUtil.uploadImage('prizes').single(
     }
 });
 
-router.delete("/:shopID/prizes/:prizeID", async (req, res) => {
+router.delete("/:shopID/prizes/:prizeID", shopOwnerOnly, async (req, res) => {
     try {
-        const { shopID, prizeID } = req.params;
+        const shopID  = req.params.shopID!;
+        const prizeID = req.params.prizeID!;
 
         // Negozio il cui prodotto e' da eliminare
         const shop = await Merchant.findOne({ 
