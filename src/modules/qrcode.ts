@@ -96,13 +96,30 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
     }
 });
 
-router.post("/redeemPrize", clientOnly, (req, res) => {
+router.post("/redeemPrize", clientOnly, async (req, res) => {
     try {
         const authReq = req as AuthenticatedRequest;
 
         const prizeID = req.body.prizeID.trim();
         if (prizeID == "") {
             return res.sendStatus(400);
+        }
+
+        const prize = await Prize.findById(prizeID);
+        const client = await Client.findById(authReq.user.id);
+        const shop = await Merchant.findOne({
+            prizes: {$all: prizeID}
+        });
+
+        if (!shop || !prize) {
+            return res.sendStatus(404);
+        }
+
+        const pointPath = `points.${shop!.id}`;
+        const currentPoints: number = client!.get(pointPath);       // Il client non è mai null per il middleware
+
+        if (currentPoints - prize.points! < 0) {
+            return res.sendStatus(402);
         }
 
         const payload: RedeemQR = new RedeemQR(prizeID, authReq.user.id);

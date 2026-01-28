@@ -769,6 +769,8 @@ paths:
                     description: Data is invalid
                 "401":
                     description: The user is not logged in, so it cannot generate
+                "402": 
+                    description: User does not have enough points to redeem the prize
                 "200":
                     description: The image of the generated QR code
                     content:
