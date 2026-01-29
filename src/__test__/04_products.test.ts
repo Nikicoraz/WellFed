@@ -1,7 +1,9 @@
 import app from "../app.js";
 import request from "supertest";
 
+// Usato nei TC 4.0, 4.1, 4.2 e 4.4
 let merchantToken: string;
+// Usato nei TC 4.0, 4.1, 4.2 e 4.3
 let shopID: string;
 
 beforeAll(async () => {

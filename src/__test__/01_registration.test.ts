@@ -2,8 +2,8 @@ import app from '../app.js';
 import request from 'supertest';
 
 
-beforeEach(async () => {
-    // Precondizione TC 1.1
+beforeAll(async () => {
+    // Precondizione TC 1.2
     await request(app)
         .post('/api/v1/register/client')
         .send({
@@ -29,7 +29,7 @@ describe('Registration Controller', () => {
         const response = await request(app)
             .post("/api/v1/register/merchant")
             .field("name", "new.merchant")
-            .field("email", "merchante@Rtest.com")
+            .field("email", "merchant@Rtest.com")
             .field("password", "Sicura!123#")
             .field("address", "Via Test")
             .field("partitaIVA", "IT12345678901")

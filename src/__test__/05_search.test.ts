@@ -15,16 +15,16 @@ beforeAll(async () => {
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
 
-    const login1 = await request(app)
+    const mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
 
-    merchantToken = login1.body.token;
-    const location1 = login1.headers.location;
+    merchantToken = mLogin.body.token;
+    const location = mLogin.headers.location;
     
-    shopID = login1.body.shopID;
-    if (!location1) throw new Error("Location header missing");
-    const parts = location1.split("/shop/");
+    shopID = mLogin.body.shopID;
+    if (!location) throw new Error("Location header missing");
+    const parts = location.split("/shop/");
     if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found in location");
     shopID = parts[1];
 

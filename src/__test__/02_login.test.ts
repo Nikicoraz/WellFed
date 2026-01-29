@@ -2,6 +2,7 @@ import app from '../app.js';
 import request from 'supertest';
 
 beforeEach(async () => {
+    // Precondizione TC 2.0
     await request(app).post('/api/v1/register/client').send({
         username: 'cliente',
         email: 'cliente@Ltest.com',
@@ -31,7 +32,7 @@ describe('Login Controller', () => {
         expect(res.headers.location).toBe('/');
     });
 
-    it('2.1 Accesso di un cliente commerciante con credenziali valide', async () => {
+    it('2.1 Accesso di un commerciante con credenziali valide', async () => {
         const res = await request(app).post('/api/v1/login').send({
             email: 'commerciante@Ltest.com',
             password: 'Sicura!123#'

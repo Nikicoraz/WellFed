@@ -1,11 +1,15 @@
 import app from '../app.js';
 import request from 'supertest';
 
+// Usato nei TC 3.0, 3.1, 3.2 e 3.3
 let merchantToken: string;
+// Usato nel TC 3.2
 let clientToken: string;
+// Usato nel TC 3.3
 let fakeProductId: string;
 
 beforeAll(async () => {
+
     await request(app)
         .post('/api/v1/register/merchant')
         .field('name', 'Shop')
@@ -21,7 +25,6 @@ beforeAll(async () => {
             email: 'shop@test.com',
             password: 'Sicura!123#'
         });
-
     merchantToken = merchantLogin.body.token;
 
     await request(app)
@@ -38,7 +41,6 @@ beforeAll(async () => {
             email: 'client@test.com',
             password: 'Sicura!123#'
         });
-
     clientToken = clientLogin.body.token;
     fakeProductId = '507f1f77bcf86cd799439011';
 });
