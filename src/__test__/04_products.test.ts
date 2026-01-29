@@ -35,7 +35,7 @@ beforeAll(async () => {
 });
 
 describe("Product Management", () => {
-    it("4.0 Aggiunta di un nuovo prodotto con dati completi", async () => { // Spero funzioni dopo il pull del fix shopID
+    it("4.0 Aggiunta di un nuovo prodotto con dati completi", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -73,7 +73,7 @@ describe("Product Management", () => {
         expect(res.status).toBe(400);
     });
 
-    it("4.3 entativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => { // Spero funzioni dopo il pull del fix shopID
+    it("4.3 entativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
         const clientLogin = await request(app)
             .post('/api/v1/login')
             .send({

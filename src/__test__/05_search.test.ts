@@ -60,10 +60,10 @@ beforeAll(async () => {
 });
 
 describe("Search API", () => {
-    it("5.0 Ricerca prodotti per nome con filtro attivo", async () => { // Spero funzioni dopo il pull del fix shopID
+    it("5.0 Ricerca prodotti per nome con filtro attivo", async () => {
         const res = await request(app)
             .get("/api/v1/search")
-            .query({ query: "c", filter: "products" });
+            .query({ query: "Ciliegia", filter: "products" });
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.products)).toBe(true);
         expect(res.body.products.length).toBeGreaterThan(0);    // deve ritornare il prodotto registrato sopra (filter: "shops")
@@ -83,12 +83,13 @@ describe("Search API", () => {
     it("5.2 Ricerca con nessuna corrispondenza", async () => {
         const res = await request(app)
             .get("/api/v1/search")
-            .query({ query: "Manuel", filter: "products" });
+            .query({ query: "Manuel"});
         expect(res.status).toBe(200);
         expect(res.body.products.length).toBe(0);
+        expect(res.body.shops.length).toBe(0);
     });
 
-    it("5.3 Ricerca senza filtro esplicito", async () => {  // Spero funzioni dopo il pull del fix shopID
+    it("5.3 Ricerca senza filtro esplicito", async () => {
         const res = await request(app)
             .get("/api/v1/search")
             .query({ query: "Ciliegia" });

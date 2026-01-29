@@ -25,7 +25,19 @@ describe('Registration Controller', () => {
         expect(response.status).toBe(201);
     });
 
-    it('1.1 Tentativo di registrazione con email già esistente', async () => {
+    it('1.1 Registrazione di un nuovo mercante in modo corretto', async () => {
+        const response = await request(app)
+            .post("/api/v1/register/merchant")
+            .field("name", "new.merchant")
+            .field("email", "merchante@Rtest.com")
+            .field("password", "Sicura!123#")
+            .field("address", "Via Test")
+            .field("partitaIVA", "IT12345678901")
+            .attach("image", Buffer.from("img"), "shop.jpg");
+        expect(response.status).toBe(202);
+    });
+
+    it('1.2 Tentativo di registrazione con email già esistente', async () => {
         const response = await request(app)
             .post('/api/v1/register/client')
             .send({
@@ -36,7 +48,7 @@ describe('Registration Controller', () => {
         expect(response.status).toBe(409);
     });
 
-    it('1.2 Tentativo di registrazione con password che viola le politiche di sicurezza', async () => {
+    it('1.3Tentativo di registrazione con password che viola le politiche di sicurezza', async () => {
         const response = await request(app)
             .post('/api/v1/register/client')
             .send({
@@ -47,7 +59,7 @@ describe('Registration Controller', () => {
         expect(response.status).toBe(400);
     });
 
-    it('1.3 Tentativo di registrazione con campo email vuoto', async () => {
+    it('1.4 Tentativo di registrazione con campo email vuoto', async () => {
         const response = await request(app)
             .post('/api/v1/register/client')
             .send({
@@ -58,7 +70,7 @@ describe('Registration Controller', () => {
         expect(response.status).toBe(400);
     });
 
-    it('1.4 Tentativo di registrazione con campo email errato', async () => {
+    it('1.5 Tentativo di registrazione con campo email errato', async () => {
         const response = await request(app)
             .post('/api/v1/register/client')
             .send({
