@@ -80,7 +80,7 @@ beforeAll(async () => {
 
 describe("QR Scan", () => {
 
-    it("6.0 Scan QR for point assignment", async () => {
+    it("6.0 Scansione codice QR assegnazione punti", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -89,7 +89,7 @@ describe("QR Scan", () => {
         expect(res.status).toBe(200);
     });
 
-    it("6.1 Scan expired QR token", async () => {
+    it("6.1 Scansione codice QR scaduto", async () => {                     // Ritrna 400 correttamente ma potrebbe essere un falso positivo
         // token rimosso manualmente simulando scadenza
         await new Promise(r => {
             return setTimeout(r, 5);
@@ -103,7 +103,7 @@ describe("QR Scan", () => {
         expect(res.status).toBe(400);
     });
 
-    it("6.2 Scan QR with merchant instead of client", async () => {
+    it("6.2 Scansione QR da mercante invece che cliente", async () => {     // Ritrna 400 correttamente ma potrebbe essere un falso positivo
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -112,7 +112,7 @@ describe("QR Scan", () => {
         expect(res.status).toBe(400);
     });
 
-    it("6.3 Scan tampered token", async () => {
+    it("6.3 Scansione token alternato", async () => {                       // Ritrna 400 correttamente ma potrebbe essere un falso positivo, gambling
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
