@@ -61,7 +61,7 @@ router.get("/", clientOnly,  async(req, res) => {
 
 router.patch("/:id", clientOnly, async(req, res) => {
     try {
-        const notificationID: string = req.params.id!;
+        const notificationID: string = req.params.id! as string;
         const areq = (req as AuthenticatedRequest).user;
 
 
@@ -88,7 +88,7 @@ router.patch("/:id", clientOnly, async(req, res) => {
 
 router.delete("/:id", clientOnly, async(req, res) => {
     try {
-        const notificationID: string = req.params.id!;
+        const notificationID: string = req.params.id! as string;
         const areq = (req as AuthenticatedRequest).user;
 
         const result = await Client.updateOne({
