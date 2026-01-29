@@ -24,9 +24,9 @@ router.get("", async(_, res) => {
 });
 
 
-router.get("/:shopId", async (req, res) => {
+router.get("/:shopID", async (req, res) => {
     try {
-        const shop = await Merchant.findById(req.params.shopId).exec();
+        const shop = await Merchant.findById(req.params.shopID).exec();
         if (!shop) {
             res.sendStatus(404);
             return;
@@ -44,9 +44,9 @@ router.get("/:shopId", async (req, res) => {
     }
 });
 
-router.get("/:shopId/products", async (req, res) => {
+router.get("/:shopID/products", async (req, res) => {
     try {
-        const shop = await Merchant.findById(req.params.shopId).exec();
+        const shop = await Merchant.findById(req.params.shopID).exec();
 
         if (!shop) {
             res.sendStatus(404);
@@ -80,13 +80,13 @@ router.get("/:shopId/products", async (req, res) => {
     }
 });
 
-router.get("/:shopId/products/:productId", async (req, res) => {
+router.get("/:shopID/products/:productID", async (req, res) => {
     try {
-        const { shopId, productId } = req.params;
+        const { shopID, productID } = req.params;
 
         const shop = await Merchant.findOne({
-            _id: shopId,
-            products: productId
+            _id: shopID,
+            products: productID
         }).exec();
 
         if (!shop) {
@@ -94,7 +94,7 @@ router.get("/:shopId/products/:productId", async (req, res) => {
             return;
         }
 
-        const product = await Product.findById(productId).exec();
+        const product = await Product.findById(productID).exec();
 
         if (!product) {
             res.sendStatus(404);
@@ -115,9 +115,9 @@ router.get("/:shopId/products/:productId", async (req, res) => {
     }
 });
 
-router.get("/:shopId/prizes", async (req, res) => {
+router.get("/:shopID/prizes", async (req, res) => {
     try {
-        const shop = await Merchant.findById(req.params.shopId).exec();
+        const shop = await Merchant.findById(req.params.shopID).exec();
 
         if (!shop) {
             res.sendStatus(404);
@@ -150,13 +150,13 @@ router.get("/:shopId/prizes", async (req, res) => {
     }
 });
 
-router.get("/:shopId/prizes/:prizeId", async (req, res) => {
+router.get("/:shopID/prizes/:prizeID", async (req, res) => {
     try {
-        const { shopId, prizeId } = req.params;
+        const { shopID, prizeID } = req.params;
 
         const shop = await Merchant.findOne({
-            _id: shopId,
-            prizes: prizeId
+            _id: shopID,
+            prizes: prizeID
         }).exec();
 
         if (!shop) {
@@ -164,7 +164,7 @@ router.get("/:shopId/prizes/:prizeId", async (req, res) => {
             return;
         }
 
-        const prize = await Prize.findById(prizeId).exec();
+        const prize = await Prize.findById(prizeID).exec();
 
         if (!prize) {
             res.sendStatus(404);

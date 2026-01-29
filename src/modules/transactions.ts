@@ -1,6 +1,6 @@
 
 import Transaction, { TransactionStatus, TransactionType } from "../models/transaction.js";
-import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
+import type { AuthenticatedRequest } from "../middleware/authentication.js";
 import type { Types } from "mongoose";
 import express from "express";
 
