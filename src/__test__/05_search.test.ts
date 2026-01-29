@@ -5,7 +5,7 @@ let merchantToken: string;
 let shopID: string;
 
 beforeAll(async () => {
-    // Registrazione e login per ricavare shopID e merchanToken validi per l'inserimento di prodotti
+    // Registrazione e login per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Negozio Test")
