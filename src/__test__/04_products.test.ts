@@ -104,6 +104,6 @@ describe("Product Management", () => {
             .field("points", 10)
             .attach("image", Buffer.from("img"), "mela.jpg");
 
-        expect(res.status).toBe(404);
+        expect(res.status).toBe(401);
     });
 });
