@@ -118,7 +118,7 @@ router.post("/redeemPrize", clientOnly, async (req, res) => {
         const pointPath = `points.${shop!.id}`;
         const currentPoints: number = client!.get(pointPath);       // Il client non è mai null per il middleware
 
-        if (currentPoints - prize.points! < 0) {
+        if ((currentPoints ?? 0) - prize.points! < 0) {
             return res.sendStatus(402);
         }
 
