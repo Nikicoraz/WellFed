@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 
 beforeAll(async () => {
     const workerId = process.env.JEST_WORKER_ID || '0';
+    console.log(workerId);
     const dbName = `WellFed_test_${workerId}`;          // Different db for each test Suite
 
     const connectOptions: mongoose.ConnectOptions = process.env.ADMIN === "true" ? { authSource: "admin", dbName } : { dbName };
