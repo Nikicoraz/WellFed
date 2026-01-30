@@ -9,7 +9,7 @@ let clientToken: string;
 let fakeProductId: string;
 
 beforeAll(async () => {
-
+    // Registrazione e login commerciante per ricavare merchantToken valido per la generazione di codici QR
     await request(app)
         .post('/api/v1/register/merchant')
         .field('name', 'Shop')
@@ -19,29 +19,31 @@ beforeAll(async () => {
         .field('partitaIVA', 'IT12345678901')
         .attach('image', Buffer.from('img'), 'shop.jpg');
 
-    const merchantLogin = await request(app)
+    const mLogin = await request(app)
         .post('/api/v1/login')
         .send({
             email: 'shop@test.com',
             password: 'Sicura!123#'
         });
-    merchantToken = merchantLogin.body.token;
+    merchantToken = mLogin.body.token;
 
+    // Registrazione e login cliente per ricavare clientToken valido
     await request(app)
         .post('/api/v1/register/client')
         .send({
-            username: 'client',
-            email: 'client@test.com',
+            username: 'Cliente',
+            email: 'cliente@test.com',
             password: 'Sicura!123#'
         });
 
     const clientLogin = await request(app)
         .post('/api/v1/login')
         .send({
-            email: 'client@test.com',
+            email: 'cliente@test.com',
             password: 'Sicura!123#'
         });
     clientToken = clientLogin.body.token;
+    
     fakeProductId = '507f1f77bcf86cd799439011';
 });
 

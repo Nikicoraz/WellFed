@@ -1,16 +1,16 @@
 import app from "../app.js";
 import request from "supertest";
 
-let merchantToken: string;
+// Utilizzato nei TC 7.0, 7.1, 7.2, 7.3
 let clientToken: string;
-let shopID: string;
+// Utilizzato nei TC 7.0, 7.4, 7.5
 let prizeID: string;
 
 beforeAll(async () => {
-    // ----- MERCHANT -----
+    // Registrazione e login commerciante per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     await request(app)
         .post("/api/v1/register/merchant")
-        .field("name", "Negozio Test")
+        .field("name", "Shop")
         .field("email", "shop@test.com")
         .field("password", "Sicura!123#")
         .field("address", "Via Test")
@@ -21,15 +21,15 @@ beforeAll(async () => {
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
 
-    merchantToken = merchantLogin.body.token;
+    const merchantToken = merchantLogin.body.token;
 
     const location = merchantLogin.header.location;
     if (!location) throw new Error("Location header missing");
     const parts = location.split("/shop/");
     if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found");
-    shopID = parts[1];
+    const shopID = parts[1];
 
-    // ----- CREA PREMIO -----
+    // Genero un  premio con il merchantToken ricavato sopra
     const prizeRes = await request(app)
         .post(`/api/v1/shops/${shopID}/prizes`)
         .set("Authorization", `Bearer ${merchantToken}`)
@@ -40,11 +40,11 @@ beforeAll(async () => {
 
     expect(prizeRes.status).toBe(201);
 
-    // Recupero premio dallo shop
+    // Recupero prizeID dallo shop 
     const shopData = await request(app).get(`/api/v1/shops/${shopID}/prizes`);
     prizeID = shopData.body[0].id;
 
-    // ----- CLIENT -----
+    // Registrazione e login cliente per ricavare clientToken valido
     await request(app)
         .post("/api/v1/register/client")
         .send({

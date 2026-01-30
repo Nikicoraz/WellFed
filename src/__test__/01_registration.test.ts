@@ -1,7 +1,6 @@
 import app from '../app.js';
 import request from 'supertest';
 
-
 beforeAll(async () => {
     // Precondizione TC 1.2
     await request(app)
@@ -48,7 +47,7 @@ describe('Registration Controller', () => {
         expect(response.status).toBe(409);
     });
 
-    it('1.3Tentativo di registrazione con password che viola le politiche di sicurezza', async () => {
+    it('1.3 Tentativo di registrazione con password che viola le politiche di sicurezza', async () => {
         const response = await request(app)
             .post('/api/v1/register/client')
             .send({

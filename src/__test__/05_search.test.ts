@@ -1,14 +1,11 @@
 import app from "../app.js";
 import request from "supertest";
 
-let merchantToken: string;
-let shopID: string;
-
 beforeAll(async () => {
     // Registrazione e login per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     await request(app)
         .post("/api/v1/register/merchant")
-        .field("name", "Negozio Test")
+        .field("name", "Negozio di Alberto")
         .field("email", "shop@test.com")
         .field("password", "Sicura!123#")
         .field("address", "Via Test")
@@ -19,10 +16,10 @@ beforeAll(async () => {
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
 
-    merchantToken = mLogin.body.token;
+    const merchantToken = mLogin.body.token;
     const location = mLogin.headers.location;
     
-    shopID = mLogin.body.shopID;
+    let shopID = mLogin.body.shopID;
     if (!location) throw new Error("Location header missing");
     const parts = location.split("/shop/");
     if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found in location");

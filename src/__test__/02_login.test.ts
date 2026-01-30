@@ -8,7 +8,7 @@ beforeEach(async () => {
         email: 'cliente@Ltest.com',
         password: 'Sicura!123#'
     });
-
+    // Precondizione TC 2.1
     await request(app)
         .post('/api/v1/register/merchant')
         .field('name', 'Negozio')

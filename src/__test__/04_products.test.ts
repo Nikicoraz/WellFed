@@ -6,10 +6,12 @@ let merchantToken: string;
 // Usato nei TC 4.0, 4.1, 4.2 e 4.3
 let shopID: string;
 
+let clientToken: string;
 beforeAll(async () => {
+    // Registrazione e login commerciante per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     await request(app)
         .post("/api/v1/register/merchant")
-        .field("name", "Negozio Test")
+        .field("name", "Shop")
         .field("email", "shop@test.com")
         .field("password", "Sicura!123#")
         .field("address", "Via Test")
@@ -28,12 +30,21 @@ beforeAll(async () => {
     const parts = location.split("/shop/");
     if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found in location");
     shopID = parts[1];
-
+    
+    // Registrazione e login cliente per ricavare clientToken valido
     await request(app).post('/api/v1/register/client').send({
         username: 'cliente',
         email: 'cliente@test.com',
         password: 'Sicura!123#'
     });
+
+    const clientLogin = await request(app)
+        .post('/api/v1/login')
+        .send({
+            email: 'cliente@test.com',
+            password: 'Sicura!123#'
+        });
+    clientToken = clientLogin.body.token;
 });
 
 describe("Product Management", () => {
@@ -76,17 +87,9 @@ describe("Product Management", () => {
     });
 
     it("4.3 entativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
-        const clientLogin = await request(app)
-            .post('/api/v1/login')
-            .send({
-                email: 'cliente@test.com',
-                password: 'Sicura!123#',
-                SSO: false
-            });
-
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
-            .set("Authorization", `Bearer ${clientLogin.body.token}`)
+            .set("Authorization", `Bearer ${clientToken}`)
             .field("name", "Test")
             .field("description", "desc")
             .field("origin", "Italia")

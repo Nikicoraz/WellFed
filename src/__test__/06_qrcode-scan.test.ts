@@ -3,47 +3,46 @@ import QrCode from "qrcode-reader";
 import app from "../app.js";
 import request from "supertest";
 
+// Utilizzato nel TC 6.2
 let merchantToken: string;
+// Utilizzato nei TC 6.0, 6.1, 6.3
 let clientToken: string;
-let shopID: string;
-let productID: string;
+// Utilizzato nei TC 6.0, 6.1, 6.2, 6.3
 let qrToken: string;
 
 beforeAll(async () => {
-    // Register merchant
+    // Registrazione e login commerciante per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     await request(app)
         .post("/api/v1/register/merchant")
-        .field("name", "Negozio Test")
-        .field("email", "merchant@qrtest.com")
+        .field("name", "Shop")
+        .field("email", "shop@qrtest.com")
         .field("password", "Sicura!123#")
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
 
-    // Merchant login
     const mLogin = await request(app)
         .post("/api/v1/login")
-        .send({ email: "merchant@qrtest.com", password: "Sicura!123#" });
+        .send({ email: "shop@qrtest.com", password: "Sicura!123#" });
 
     merchantToken = mLogin.body.token;
     const location = mLogin.headers.location;
     if (!location) throw new Error("Location header missing");
     const mParts = location.split("/shop/");
     if (mParts.length < 2 || !mParts[1]) throw new Error("Shop ID not found in location");
-    shopID = mParts[1];
+    const shopID = mParts[1];
 
-    // Register client
+    // Registrazione e login cliente per ricavare clientToken valido
     await request(app)
         .post("/api/v1/register/client")
         .send({ username: "cliente", email: "cliente@qrtest.com", password: "Sicura!123#" });
 
-    // Client login
     const cLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "cliente@qrtest.com", password: "Sicura!123#" });
     clientToken = cLogin.body.token;
 
-    // Add a product
+    // Inserimento di prodotti con il mercante creato sopra
     await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
@@ -53,15 +52,15 @@ beforeAll(async () => {
         .field("points", 10)
         .attach("image", Buffer.from("img"), "banana.jpg");
 
-    // Fetch product list from shop
+    // Trovo il productID per generare il QR
     const shopProducts = await request(app)
         .get(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`);
 
     if (!shopProducts.body || shopProducts.body.length === 0) throw new Error("No products found");
-    productID = shopProducts.body[0].id;
+    const productID = shopProducts.body[0].id;
 
-    // Generate QR via assignPoints API
+    // Genero il codice QR per assegnare punti al cliente
     const qrResp = await request(app)
         .post("/api/v1/QRCodes/assignPoints")
         .set("Authorization", `Bearer ${merchantToken}`)
@@ -70,7 +69,7 @@ beforeAll(async () => {
     const dataUrl: string = qrResp.text;
     if (!dataUrl.startsWith("data:image/")) throw new Error("Invalid QR Data URL");
 
-    // Decode the QR image to extract the JWT token
+    // Decodifico l'immagine del QR per estrarre il JWT token
     const base64 = dataUrl.split(",")[1];
     if (!base64) throw new Error("Failed to extract QR image data");
 
