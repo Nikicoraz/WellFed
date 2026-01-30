@@ -1,7 +1,15 @@
 import { Jimp } from "jimp";
-import QrCode from "qrcode-reader";
 import app from "../app.js";
+import { clearAllPendingTimers } from '../modules/qrcode.js';
+import jsQRModule from "jsqr";
 import request from "supertest";
+
+// Casting TS per rendere jsQR callable
+const jsQR = jsQRModule as unknown as (
+    data: Uint8ClampedArray,
+    width: number,
+    height: number
+) => { data: string } | null;
 
 // Utilizzato nei TC 7.0, 7.1, 7.2, 7.3, 7.4
 let clientToken: string;
@@ -13,11 +21,34 @@ let bigPrizeID: string;
 // Parameters
 const ppp = 10;         // Points assigned per units bought
 const p = 2;            // units bought
-const prp = 15;         // points needed to reedem the prize which the customer should be able to redeem    (ppp*p >= prp)
-const bigprp = 100;     // points needed to reedem the prize which the customer shouldn't be able to redeem (ppp*p < bigprp)
+const prp = 15;         // points needed to redeem the prize
+const bigprp = 100;     // points needed to redeem the big prize
+
+// Funzione helper per generare e decodificare QR in JWT
+async function generateQrToken(productID: string, merchantToken: string): Promise<string> {
+    const qrResp = await request(app)
+        .post("/api/v1/QRCodes/assignPoints")
+        .set("Authorization", `Bearer ${merchantToken}`)
+        .send([{ productID, quantity: p }]);
+
+    const dataUrl: string = qrResp.text;
+    if (!dataUrl.startsWith("data:image/")) throw new Error("Invalid QR Data URL");
+
+    const base64 = dataUrl.split(",")[1];
+    if (!base64) throw new Error("Failed to extract QR image data");
+
+    const img = await Jimp.read(Buffer.from(base64, "base64"));
+    img.greyscale().contrast(1);
+
+    const { data, width, height } = img.bitmap;
+    const code = jsQR(new Uint8ClampedArray(data), width, height);
+    if (!code) throw new Error("QR Code non trovato nell'immagine");
+
+    return code.data;
+}
 
 beforeAll(async () => {
-    // Registrazione e login commerciante per ricavare shopID e merchantToken validi per l'inserimento di prodotti
+    // Registrazione e login commerciante
     await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Shop")
@@ -32,11 +63,13 @@ beforeAll(async () => {
         .send({ email: "shop@test.com", password: "Sicura!123#" });
 
     const merchantToken = mLogin.body.token;
-    const location = mLogin.header.location;    if (!location) throw new Error("Location header missing");
-    const parts = location.split("/shop/");     if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found");
+    const location = mLogin.header.location;
+    if (!location) throw new Error("Location header missing");
+    const parts = location.split("/shop/");
+    if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found");
     const shopID = parts[1];
 
-    // Genero dei premi con il merchantToken ricavato sopra
+    // Genero premi
     let prizeRes = await request(app)
         .post(`/api/v1/shops/${shopID}/prizes`)
         .set("Authorization", `Bearer ${merchantToken}`)
@@ -55,12 +88,11 @@ beforeAll(async () => {
         .attach("image", Buffer.from("img"), "prize.jpg");
     expect(prizeRes.status).toBe(201);
 
-    // Recupero i prizeID dallo shop 
     const shopData = await request(app).get(`/api/v1/shops/${shopID}/prizes`);
     prizeID = shopData.body[0].id;
     bigPrizeID = shopData.body[1].id;
-    
-    // Inserimento di prodotti con il mercante creato sopra
+
+    // Inserimento prodotti
     await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
@@ -70,51 +102,33 @@ beforeAll(async () => {
         .field("points", ppp)
         .attach("image", Buffer.from("img"), "banana.jpg");
 
-    // Trovo il productID per generare il QR
     const shopProducts = await request(app)
         .get(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`);
     const productID = shopProducts.body[0].id;
 
-    // Registrazione e login cliente per ricavare clientToken valido
+    // Registrazione cliente
     await request(app)
         .post("/api/v1/register/client")
-        .send({
-            username: "cliente",
-            email: "cliente@test.com",
-            password: "Sicura!123#"
-        });
+        .send({ username: "cliente", email: "cliente@test.com", password: "Sicura!123#" });
 
     const cLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "cliente@test.com", password: "Sicura!123#" });
     clientToken = cLogin.body.token;
 
-    // Genero il codice QR per assegnare punti al cliente
-    const qrResp = await request(app)
-        .post("/api/v1/QRCodes/assignPoints")
-        .set("Authorization", `Bearer ${merchantToken}`)
-        .send([{ productID, quantity: p }]);
-
-    const dataUrl: string = qrResp.text;    if (!dataUrl.startsWith("data:image/")) throw new Error("Invalid QR Data URL");
-
-    // Decodifico l'immagine del QR per estrarre il JWT token
-    const base64 = dataUrl.split(",")[1];   if (!base64) throw new Error("Failed to extract QR image data");
-    const img = await Jimp.read(Buffer.from(base64, "base64"));
-    const qrReader = new QrCode();
-    const qrToken = await new Promise<string>((resolve, reject) => {
-        qrReader.callback = (err, value) => {
-            if (err) reject(err);
-            else resolve(value.result);
-        };
-        qrReader.decode(img.bitmap);
-    });
+    // Genero e scansiono QR per assegnazione punti
+    const qrToken = await generateQrToken(productID, merchantToken);
 
     const res = await request(app)
         .post("/api/v1/QRCodes/scanned")
         .set("Authorization", `Bearer ${clientToken}`)
         .send({ token: qrToken });
     expect(res.status).toBe(200);
+});
+
+afterAll(async () => {
+    await clearAllPendingTimers();
 });
 
 describe("QR Redeem Prize", () => {

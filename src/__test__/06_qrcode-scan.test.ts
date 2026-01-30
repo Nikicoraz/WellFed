@@ -1,14 +1,57 @@
 import { Jimp } from "jimp";
-import QrCode from "qrcode-reader";
 import app from "../app.js";
+import { clearAllPendingTimers } from '../modules/qrcode.js';
+import jsQRModule from "jsqr";
 import request from "supertest";
+
+// il modulo jsQR in TS/ESM non ha default “callable”, quindi serve cast esplicito
+const jsQR = jsQRModule as unknown as (
+    data: Uint8ClampedArray,
+    width: number,
+    height: number
+) => { data: string } | null;
 
 // Utilizzato nel TC 6.2
 let merchantToken: string;
 // Utilizzato nei TC 6.0, 6.1, 6.3
 let clientToken: string;
 // Utilizzato nei TC 6.0, 6.1, 6.2, 6.3
-let qrToken: string;
+let shopID: string;
+
+async function generateQrToken(shopID: string, merchantToken: string): Promise<string> {
+    // prendo il productID
+    const shopProducts = await request(app)
+        .get(`/api/v1/shops/${shopID}/products`)
+        .set("Authorization", `Bearer ${merchantToken}`);
+
+    if (!shopProducts.body?.length) throw new Error("No products found");
+    const productID = shopProducts.body[0].id;
+
+    // creo il qr
+    const qrResp = await request(app)
+        .post("/api/v1/QRCodes/assignPoints")
+        .set("Authorization", `Bearer ${merchantToken}`)
+        .send([{ productID, quantity: 2 }]);
+
+    const dataUrl: string = qrResp.text;
+    if (!dataUrl.startsWith("data:image/")) throw new Error("Invalid QR Data URL");
+
+    const base64 = dataUrl.split(",")[1];
+    if (!base64) throw new Error("Failed to extract QR image data");
+
+    const img = await Jimp.read(Buffer.from(base64, "base64"));
+
+    // Preprocess per stabilità
+    img.greyscale().contrast(1);
+
+    const { data, width, height } = img.bitmap;
+
+    // decodifica con jsQR
+    const code = jsQR(new Uint8ClampedArray(data), width, height);
+    if (!code) throw new Error("QR Code non trovato nell'immagine");
+
+    return code.data;
+}
 
 beforeAll(async () => {
     // Registrazione e login commerciante per ricavare shopID e merchantToken validi per l'inserimento di prodotti
@@ -30,7 +73,7 @@ beforeAll(async () => {
     if (!location) throw new Error("Location header missing");
     const mParts = location.split("/shop/");
     if (mParts.length < 2 || !mParts[1]) throw new Error("Shop ID not found in location");
-    const shopID = mParts[1];
+    shopID = mParts[1];
 
     // Registrazione e login cliente per ricavare clientToken valido
     await request(app)
@@ -51,42 +94,17 @@ beforeAll(async () => {
         .field("origin", "Ecuador")
         .field("points", 10)
         .attach("image", Buffer.from("img"), "banana.jpg");
+});
 
-    // Trovo il productID per generare il QR
-    const shopProducts = await request(app)
-        .get(`/api/v1/shops/${shopID}/products`)
-        .set("Authorization", `Bearer ${merchantToken}`);
-
-    if (!shopProducts.body || shopProducts.body.length === 0) throw new Error("No products found");
-    const productID = shopProducts.body[0].id;
-
-    // Genero il codice QR per assegnare punti al cliente
-    const qrResp = await request(app)
-        .post("/api/v1/QRCodes/assignPoints")
-        .set("Authorization", `Bearer ${merchantToken}`)
-        .send([{ productID, quantity: 2 }]);
-
-    const dataUrl: string = qrResp.text;
-    if (!dataUrl.startsWith("data:image/")) throw new Error("Invalid QR Data URL");
-
-    // Decodifico l'immagine del QR per estrarre il JWT token
-    const base64 = dataUrl.split(",")[1];
-    if (!base64) throw new Error("Failed to extract QR image data");
-
-    const img = await Jimp.read(Buffer.from(base64, "base64"));
-    const qrReader = new QrCode();
-
-    qrToken = await new Promise<string>((resolve, reject) => {
-        qrReader.callback = (err, value) => {
-            if (err) reject(err);
-            else resolve(value.result);
-        };
-        qrReader.decode(img.bitmap);
-    });
+afterAll(async () => {
+    await clearAllPendingTimers();
 });
 
 describe("QR Scan", () => {
+
     it("6.0 Scansione codice QR assegnazione punti", async () => {
+        const qrToken = await generateQrToken(shopID, merchantToken);
+
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -96,20 +114,24 @@ describe("QR Scan", () => {
     });
 
     it("6.1 Scansione codice QR già utilizzato", async () => {
+        const qrToken = await generateQrToken(shopID, merchantToken);
+
         await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
-            .send({ token: qrToken});
+            .send({ token: qrToken });
 
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
-            .send({ token: qrToken});
+            .send({ token: qrToken });
 
         expect(res.status).toBe(400);
     });
 
     it("6.2 Scansione QR da mercante invece che cliente", async () => {
+        const qrToken = await generateQrToken(shopID, merchantToken);
+
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -119,6 +141,8 @@ describe("QR Scan", () => {
     });
 
     it("6.3 Scansione token alternato", async () => {
+        const qrToken = await generateQrToken(shopID, merchantToken);
+
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -126,4 +150,5 @@ describe("QR Scan", () => {
 
         expect(res.status).toBe(400);
     });
+
 });

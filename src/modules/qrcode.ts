@@ -53,14 +53,28 @@ class RedeemQR implements QR {
 }
 
 let pendingTokens: string[] = [];
+let timers: NodeJS.Timeout[] = [];
+
 function addPendingToken(token: string) {
     pendingTokens.push(token);
-    setTimeout(() => {
-        pendingTokens = pendingTokens.filter((e) => {
-            return e != token;
+    const t = setTimeout(() => {
+        pendingTokens = pendingTokens.filter(e => {
+            return e !== token;
         });
-    }, (1000 * 60 * 2));
+        timers = timers.filter(timer => {
+            return timer !== t;
+        });
+    }, 1000 * 60 * 2); // 2 minutes
+    timers.push(t);
 }
+
+export function clearAllPendingTimers() {
+    timers.forEach(t => {
+        return clearTimeout(t);
+    });
+    timers = [];
+}
+
 
 router.post("/assignPoints", merchantOnly, async (req, res) => {
     try {

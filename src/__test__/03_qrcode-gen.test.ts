@@ -1,6 +1,6 @@
 import app from '../app.js';
+import { clearAllPendingTimers } from '../modules/qrcode.js';
 import request from 'supertest';
-
 // Usato nei TC 3.0, 3.1, 3.2 e 3.3
 let merchantToken: string;
 // Usato nel TC 3.2
@@ -45,6 +45,10 @@ beforeAll(async () => {
     clientToken = clientLogin.body.token;
     
     fakeProductId = '507f1f77bcf86cd799439011';
+});
+
+afterAll(async () => {
+    await clearAllPendingTimers();
 });
 
 describe('QR Code Controller', () => {
