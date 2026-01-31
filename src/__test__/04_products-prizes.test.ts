@@ -1,14 +1,15 @@
 import app from "../app.js";
 import request from "supertest";
 
-// Usato nei TC 4.0, 4.1, 4.2 e 4.4
+// Usato nei TC 4.0, 4.1, 4.2, 4.3 e 4.5
 let merchantToken: string;
-// Usato nei TC 4.0, 4.1, 4.2 e 4.3
+// Usato nei TC 4.0, 4.1, 4.2, 4.3 e 4.4
 let shopID: string;
-
+// Usato nel TC 4.4
+let clientToken: string;
+// Usato nel TC 4.5
 let shopID2: string;
 
-let clientToken: string;
 beforeAll(async () => {
     // Registrazione e login commerciante1 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     let res = await request(app)
