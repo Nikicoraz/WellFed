@@ -103,7 +103,7 @@ afterAll(async () => {
     await clearAllPendingTimers();
 });
 
-describe("QR Scan", () => {
+describe("Redeem points QR scan Controller", () => {
     it("6.0 Scansione codice QR assegnazione punti", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
         const res = await request(app)
@@ -114,9 +114,8 @@ describe("QR Scan", () => {
         expect(res.status).toBe(200);
     });
 
-    it("6.1 Scansione codice QR già utilizzato", async () => {
+    it("6.1 Scansione codice QR assegnazione punti già utilizzato", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
-
         await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -130,9 +129,8 @@ describe("QR Scan", () => {
         expect(res.status).toBe(400);
     });
 
-    it("6.2 Scansione QR da mercante invece che cliente", async () => {
+    it("6.2 Scansione codice QR assegnazione punti da mercante invece che cliente", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
-
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -141,9 +139,8 @@ describe("QR Scan", () => {
         expect(res.status).toBe(400);
     });
 
-    it("6.3 Scansione token alternato", async () => {                   // Questo test genera un errore su terminale. Non ti curar di lui, ma guarda e passa
+    it("6.3 Scansione codice QR assegnazione punti token alternato", async () => {  // Questo test genera un errore su terminale. Non ti curar di lui, ma guarda e passa
         const qrToken = await generateQrToken(shopID, merchantToken);
-
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)

@@ -1,15 +1,20 @@
 import app from '../app.js';
 import request from 'supertest';
 
-beforeEach(async () => {
+beforeAll(async () => {
     // Precondizione TC 2.0
-    await request(app).post('/api/v1/register/client').send({
-        username: 'cliente',
-        email: 'cliente@Ltest.com',
-        password: 'Sicura!123#'
-    });
+    let res = await request(app)
+        .post('/api/v1/register/client')
+        .send({
+            username: 'cliente',
+            email: 'cliente@Ltest.com',
+            password: 'Sicura!123#',
+            SSO: false
+        });
+    expect(res.status).toBe(201);
+
     // Precondizione TC 2.1
-    await request(app)
+    res = await request(app)
         .post('/api/v1/register/merchant')
         .field('name', 'Negozio')
         .field('email', 'commerciante@Ltest.com')
@@ -17,6 +22,7 @@ beforeEach(async () => {
         .field('address', 'Via Test')
         .field('partitaIVA', 'IT12345678901')
         .attach('image', Buffer.from('img'), 'shop.jpg');
+    expect(res.status).toBe(202);
 });
 
 describe('Login Controller', () => {
@@ -26,7 +32,7 @@ describe('Login Controller', () => {
             password: 'Sicura!123#',
             SSO: false
         });
-        
+
         expect(res.status).toBe(200);
         expect(res.body.token).toBeDefined();
         expect(res.headers.location).toBe('/');

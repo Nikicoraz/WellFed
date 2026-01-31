@@ -11,7 +11,7 @@ let shopID2: string;
 let clientToken: string;
 beforeAll(async () => {
     // Registrazione e login commerciante1 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
-    await request(app)
+    let res = await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Shop")
         .field("email", "shop@test.com")
@@ -19,10 +19,12 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
+    expect(res.status).toBe(202);
 
     let mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
+    expect(mLogin.status).toBe(200);
 
     merchantToken = mLogin.body.token;
     let location = mLogin.headers.location!;
@@ -30,7 +32,7 @@ beforeAll(async () => {
     shopID = parts[1]!;
 
     // Registrazione e login commerciante2 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
-    await request(app)
+    res = await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Shop2")
         .field("email", "shop2@test.com")
@@ -38,32 +40,37 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
+    expect(res.status).toBe(202);
 
     mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop2@test.com", password: "Sicura!123#" });
+    expect(mLogin.status).toBe(200);
 
     location = mLogin.headers.location!;
     parts = location.split("/shop/");
     shopID2 = parts[1]!;
 
     // Registrazione e login cliente per ricavare clientToken valido
-    await request(app).post('/api/v1/register/client').send({
+    res = await request(app).post('/api/v1/register/client').send({
         username: 'cliente',
         email: 'cliente@test.com',
         password: 'Sicura!123#'
     });
+    expect(res.status).toBe(201);
 
-    const clientLogin = await request(app)
+    const cLogin = await request(app)
         .post('/api/v1/login')
         .send({
             email: 'cliente@test.com',
             password: 'Sicura!123#'
         });
-    clientToken = clientLogin.body.token;
+    expect(cLogin.status).toBe(200);
+
+    clientToken = cLogin.body.token;
 });
 
-describe("Product Management", () => {
+describe("Products and prizes Controller", () => {
     it("4.0 Aggiunta di un nuovo prodotto con dati completi", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
@@ -113,7 +120,7 @@ describe("Product Management", () => {
         expect(res.status).toBe(400);
     });
 
-    it("4.4 entativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
+    it("4.4 Tentativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${clientToken}`)

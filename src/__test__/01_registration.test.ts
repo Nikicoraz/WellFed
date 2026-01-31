@@ -3,13 +3,14 @@ import request from 'supertest';
 
 beforeAll(async () => {
     // Precondizione TC 1.2
-    await request(app)
+    const res = await request(app)
         .post('/api/v1/register/client')
         .send({
             username: 'esistente',
             email: 'esistente@Rtest.com',
             password: 'Sicura!123#'
         });
+    expect(res.status).toBe(201);
 });
 
 describe('Registration Controller', () => {

@@ -11,7 +11,7 @@ let productID: string;
 
 beforeAll(async () => {
     // Registrazione e login commerciante per ricavare merchantToken valido per la generazione di codici QR
-    await request(app)
+    let res = await request(app)
         .post('/api/v1/register/merchant')
         .field('name', 'Shop')
         .field('email', 'shop@test.com')
@@ -19,6 +19,7 @@ beforeAll(async () => {
         .field('address', 'Via Test')
         .field('partitaIVA', 'IT12345678901')
         .attach('image', Buffer.from('img'), 'shop.jpg');
+    expect(res.status).toBe(202);
 
     const mLogin = await request(app)
         .post('/api/v1/login')
@@ -26,14 +27,15 @@ beforeAll(async () => {
             email: 'shop@test.com',
             password: 'Sicura!123#'
         });
+    expect(mLogin.status).toBe(200);
+
     merchantToken = mLogin.body.token;
     const location = mLogin.headers.location!;
-
     const parts = location.split("/shop/");
     const shopID = parts[1];
 
     // Aggiungo un prodotto
-    const res = await request(app)
+    res = await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
         .field("name", "Mela")
@@ -46,31 +48,36 @@ beforeAll(async () => {
     const shopProducts = await request(app)
         .get(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`);
+    expect(shopProducts.status).toBe(200);
+
     productID = shopProducts.body[0].id;
 
     // Registrazione e login cliente per ricavare clientToken valido
-    await request(app)
+    res = await request(app)
         .post('/api/v1/register/client')
         .send({
             username: 'Cliente',
             email: 'cliente@test.com',
             password: 'Sicura!123#'
         });
+    expect(res.status).toBe(201);
 
-    const clientLogin = await request(app)
+    const cLogin = await request(app)
         .post('/api/v1/login')
         .send({
             email: 'cliente@test.com',
             password: 'Sicura!123#'
         });
-    clientToken = clientLogin.body.token;
+    expect(cLogin.status).toBe(200);
+
+    clientToken = cLogin.body.token;
 });
 
 afterAll(async () => {
     await clearAllPendingTimers();
 });
 
-describe('QR Code Controller', () => {
+describe('Redeem points QR generation Controller', () => {
     it('3.0 Generazione codice QR (per la riscossione di punti) da lista prodotti valida', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')

@@ -3,7 +3,7 @@ import request from "supertest";
 
 beforeAll(async () => {
     // Registrazione e login per ricavare shopID e merchantToken validi per l'inserimento di prodotti
-    await request(app)
+    let res = await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Negozio di Alberto")
         .field("email", "shop@test.com")
@@ -11,10 +11,12 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
+    expect(res.status).toBe(202);
 
     const mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
+    expect(mLogin.status).toBe(200);
 
     const merchantToken = mLogin.body.token;
     const location = mLogin.headers.location!;
@@ -22,7 +24,7 @@ beforeAll(async () => {
     const shopID = parts[1];
 
     // Inserimento di prodotti con il mercante creato sopra
-    let res = await request(app)
+    res = await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
         .field("name", "Ciliegia Bio")
@@ -54,11 +56,12 @@ beforeAll(async () => {
     expect(res.status).toBe(202);
 });
 
-describe("Search API", () => {
+describe("Search Controller", () => {
     it("5.0 Ricerca prodotti per nome con filtro attivo", async () => {
         const res = await request(app)
             .get("/api/v1/search")
             .query({ query: "Ciliegia", filter: "products" });
+
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.products)).toBe(true);
         expect(res.body.products.length).toBeGreaterThan(0);    // deve ritornare il prodotto registrato sopra (filter: "shops")
@@ -79,6 +82,7 @@ describe("Search API", () => {
         const res = await request(app)
             .get("/api/v1/search")
             .query({ query: "Manuel"});
+
         expect(res.status).toBe(200);
         expect(res.body.products.length).toBe(0);
         expect(res.body.shops.length).toBe(0);
