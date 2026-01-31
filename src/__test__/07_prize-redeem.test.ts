@@ -151,6 +151,7 @@ describe("QR Redeem Prize", () => {
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
             .send({ prizeID: bigPrizeID });
+        
         expect(res.status).toBe(402);
     });
 

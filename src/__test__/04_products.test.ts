@@ -19,7 +19,7 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
- 
+
     let mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
@@ -28,7 +28,7 @@ beforeAll(async () => {
     let location = mLogin.headers.location!;
     let parts = location.split("/shop/");
     shopID = parts[1]!;
-    
+
     // Registrazione e login commerciante2 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     await request(app)
         .post("/api/v1/register/merchant")
@@ -38,7 +38,7 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
- 
+
     mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop2@test.com", password: "Sicura!123#" });
@@ -77,7 +77,18 @@ describe("Product Management", () => {
         expect(res.status).toBe(201);
     });
 
-    it("4.1 Aggiunta di un prodotto con uno o più campi vuoti", async () => {
+    it("4.1 Aggiunta di un nuovo premi con dati completi", async () => {
+        const res = await request(app)
+            .post(`/api/v1/shops/${shopID}/prizes`)
+            .set("Authorization", `Bearer ${merchantToken}`)
+            .field("name", "Premio Test")
+            .field("description", "Premio descrizione")
+            .field("points", 10)
+            .attach("image", Buffer.from("img"), "prize.jpg");
+        expect(res.status).toBe(201);
+    });
+
+    it("4.2 Aggiunta di un prodotto con uno o più campi vuoti", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -90,7 +101,7 @@ describe("Product Management", () => {
         expect(res.status).toBe(400);
     });
 
-    it("4.2 Aggiunta prodotto senza immagine", async () => {
+    it("4.3 Aggiunta prodotto senza immagine", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -102,7 +113,7 @@ describe("Product Management", () => {
         expect(res.status).toBe(400);
     });
 
-    it("4.3 entativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
+    it("4.4 entativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${clientToken}`)
@@ -115,7 +126,7 @@ describe("Product Management", () => {
         expect(res.status).toBe(401);
     });
 
-    it("4.4 Aggiunta prodotto con shopID inesistente", async () => {
+    it("4.5 Aggiunta prodotto con shopID inesistente", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID2}/products`)
             .set("Authorization", `Bearer ${merchantToken}`)
