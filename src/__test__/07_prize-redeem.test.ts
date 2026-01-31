@@ -102,6 +102,7 @@ beforeAll(async () => {
         .field("origin", "Ecuador")
         .field("points", ppp)
         .attach("image", Buffer.from("img"), "banana.jpg");
+    expect(res.status).toBe(201);
 
     const shopProducts = await request(app)
         .get(`/api/v1/shops/${shopID}/products`)
@@ -109,14 +110,16 @@ beforeAll(async () => {
     const productID = shopProducts.body[0].id;
 
     // Registrazione cliente
-    await request(app)
+    res = await request(app)
         .post("/api/v1/register/client")
         .send({ username: "cliente", email: "cliente@test.com", password: "Sicura!123#" });
+    expect(res.status).toBe(201);
 
     const cLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "cliente@test.com", password: "Sicura!123#" });
     clientToken = cLogin.body.token;
+    expect(cLogin.status).toBe(200);
 
     // Genero e scansiono QR per assegnazione punti
     const qrToken = await generateQrToken(productID, merchantToken);

@@ -47,7 +47,6 @@ beforeAll(async () => {
         .get(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`);
     productID = shopProducts.body[0].id;
-    console.log(productID);
 
     // Registrazione e login cliente per ricavare clientToken valido
     await request(app)
