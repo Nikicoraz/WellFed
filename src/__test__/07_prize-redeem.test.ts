@@ -30,6 +30,7 @@ async function generateQrToken(productID: string, merchantToken: string): Promis
         .post("/api/v1/QRCodes/assignPoints")
         .set("Authorization", `Bearer ${merchantToken}`)
         .send([{ productID, quantity: p }]);
+    expect(qrResp.status).toBe(200);
 
     const dataUrl: string = qrResp.text;
     if (!dataUrl.startsWith("data:image/")) throw new Error("Invalid QR Data URL");
