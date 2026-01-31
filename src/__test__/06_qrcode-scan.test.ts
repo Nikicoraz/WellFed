@@ -55,7 +55,7 @@ async function generateQrToken(shopID: string, merchantToken: string): Promise<s
 
 beforeAll(async () => {
     // Registrazione e login commerciante per ricavare shopID e merchantToken validi per l'inserimento di prodotti
-    await request(app)
+    let res = await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Shop")
         .field("email", "shop@qrtest.com")
@@ -63,30 +63,32 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
+    expect(res.status).toBe(202);
 
     const mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@qrtest.com", password: "Sicura!123#" });
+    expect(mLogin.status).toBe(200);
 
     merchantToken = mLogin.body.token;
-    const location = mLogin.headers.location;
-    if (!location) throw new Error("Location header missing");
-    const mParts = location.split("/shop/");
-    if (mParts.length < 2 || !mParts[1]) throw new Error("Shop ID not found in location");
-    shopID = mParts[1];
+    const location = mLogin.headers.location!;
+    const parts = location.split("/shop/");
+    shopID = parts[1]!;
 
     // Registrazione e login cliente per ricavare clientToken valido
-    await request(app)
+    res = await request(app)
         .post("/api/v1/register/client")
         .send({ username: "cliente", email: "cliente@qrtest.com", password: "Sicura!123#" });
+    expect(res.status).toBe(201);
 
     const cLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "cliente@qrtest.com", password: "Sicura!123#" });
     clientToken = cLogin.body.token;
+    expect(cLogin.status).toBe(200);
 
     // Inserimento di prodotti con il mercante creato sopra
-    await request(app)
+    res = await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
         .field("name", "Banana")
@@ -94,6 +96,7 @@ beforeAll(async () => {
         .field("origin", "Ecuador")
         .field("points", 10)
         .attach("image", Buffer.from("img"), "banana.jpg");
+    expect(res.status).toBe(201);
 });
 
 afterAll(async () => {
@@ -101,10 +104,8 @@ afterAll(async () => {
 });
 
 describe("QR Scan", () => {
-
     it("6.0 Scansione codice QR assegnazione punti", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
-
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -140,7 +141,7 @@ describe("QR Scan", () => {
         expect(res.status).toBe(400);
     });
 
-    it("6.3 Scansione token alternato", async () => {
+    it("6.3 Scansione token alternato", async () => {                   // Questo test genera un errore su terminale. Non ti curar di lui, ma guarda e passa
         const qrToken = await generateQrToken(shopID, merchantToken);
 
         const res = await request(app)

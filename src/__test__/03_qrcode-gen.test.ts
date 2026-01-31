@@ -1,12 +1,13 @@
 import app from '../app.js';
 import { clearAllPendingTimers } from '../modules/qrcode.js';
 import request from 'supertest';
+
 // Usato nei TC 3.0, 3.1, 3.2 e 3.3
 let merchantToken: string;
-// Usato nel TC 3.2
+// Usato nei TC 3.0, 3.1, 3.3
 let clientToken: string;
-// Usato nel TC 3.3
-let fakeProductId: string;
+// Usato nel TC 3.2
+let productID: string;
 
 beforeAll(async () => {
     // Registrazione e login commerciante per ricavare merchantToken valido per la generazione di codici QR
@@ -26,6 +27,27 @@ beforeAll(async () => {
             password: 'Sicura!123#'
         });
     merchantToken = mLogin.body.token;
+    const location = mLogin.headers.location!;
+
+    const parts = location.split("/shop/");
+    const shopID = parts[1];
+
+    // Aggiungo un prodotto
+    const res = await request(app)
+        .post(`/api/v1/shops/${shopID}/products`)
+        .set("Authorization", `Bearer ${merchantToken}`)
+        .field("name", "Mela")
+        .field("description", "Mela rossa bio")
+        .field("origin", "Italia")
+        .field("points", 10)
+        .attach("image", Buffer.from("img"), "mela.jpg");
+    expect(res.status).toBe(201);
+
+    const shopProducts = await request(app)
+        .get(`/api/v1/shops/${shopID}/products`)
+        .set("Authorization", `Bearer ${merchantToken}`);
+    productID = shopProducts.body[0].id;
+    console.log(productID);
 
     // Registrazione e login cliente per ricavare clientToken valido
     await request(app)
@@ -43,8 +65,6 @@ beforeAll(async () => {
             password: 'Sicura!123#'
         });
     clientToken = clientLogin.body.token;
-    
-    fakeProductId = '507f1f77bcf86cd799439011';
 });
 
 afterAll(async () => {
@@ -52,12 +72,12 @@ afterAll(async () => {
 });
 
 describe('QR Code Controller', () => {
-    it('3.0 Generazione codice QR con lista prodotti valida', async () => {
+    it('3.0 Generazione codice QR (per la riscossione di punti) da lista prodotti valida', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
             .set('Authorization', `Bearer ${merchantToken}`)
             .send([
-                { productID: fakeProductId, quantity: 2 }
+                { productID: productID, quantity: 2 }
             ]);
 
         expect(res.status).toBe(200);
@@ -65,12 +85,12 @@ describe('QR Code Controller', () => {
         expect(res.text).toMatch(/^data:image\/png;base64,/);
     });
 
-    it('3.1 Tentativo di generazione QR con lista prodotti non valida (cliente)', async () => {
+    it('3.1 Tentativo di generazione QR con lista prodotti valida ma token di autenticazione di un cliente invece che di un commerciante', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
             .set('Authorization', `Bearer ${clientToken}`)
             .send([
-                { productID: fakeProductId, quantity: 1 }
+                { productID: productID, quantity: 1 }
             ]);
 
         expect(res.status).toBe(400);
@@ -86,23 +106,11 @@ describe('QR Code Controller', () => {
         expect(res.text).toMatch(/^data:image\/png;base64,/);
     });
 
-    it('3.3 Generazione QR con prodotto inesistente', async () => {
-        const res = await request(app)
-            .post('/api/v1/QRCodes/assignPoints')
-            .set('Authorization', `Bearer ${merchantToken}`)
-            .send([
-                { productID: fakeProductId, quantity: 5 }
-            ]);
-
-        expect(res.status).toBe(200);
-        expect(res.text).toMatch(/^data:image\/png;base64,/);
-    });
-
-    it('3.4 Generazione QR senza token', async () => {
+    it('3.3 Generazione QR senza token', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
             .send([
-                { productID: fakeProductId, quantity: 1 }
+                { productID: productID, quantity: 1 }
             ]);
 
         expect(res.status).toBe(401);

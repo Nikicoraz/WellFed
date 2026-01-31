@@ -49,7 +49,7 @@ async function generateQrToken(productID: string, merchantToken: string): Promis
 
 beforeAll(async () => {
     // Registrazione e login commerciante
-    await request(app)
+    let res = await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Shop")
         .field("email", "shop@test.com")
@@ -57,16 +57,16 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
+    expect(res.status).toBe(202);
 
     const mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
+    expect(mLogin.status).toBe(200);
 
     const merchantToken = mLogin.body.token;
-    const location = mLogin.header.location;
-    if (!location) throw new Error("Location header missing");
+    const location = mLogin.header.location!;
     const parts = location.split("/shop/");
-    if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found");
     const shopID = parts[1];
 
     // Genero premi
@@ -93,7 +93,7 @@ beforeAll(async () => {
     bigPrizeID = shopData.body[1].id;
 
     // Inserimento prodotti
-    await request(app)
+    res = await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
         .field("name", "Banana")
@@ -120,7 +120,7 @@ beforeAll(async () => {
     // Genero e scansiono QR per assegnazione punti
     const qrToken = await generateQrToken(productID, merchantToken);
 
-    const res = await request(app)
+    res = await request(app)
         .post("/api/v1/QRCodes/scanned")
         .set("Authorization", `Bearer ${clientToken}`)
         .send({ token: qrToken });
@@ -132,7 +132,6 @@ afterAll(async () => {
 });
 
 describe("QR Redeem Prize", () => {
-
     it("7.0 Generazione QR per riscossione premio valida", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")

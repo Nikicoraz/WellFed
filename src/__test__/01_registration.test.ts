@@ -69,7 +69,7 @@ describe('Registration Controller', () => {
         expect(response.status).toBe(400);
     });
 
-    it('1.5 Tentativo di registrazione con campo email errato', async () => {
+    it('1.5 Tentativo di registrazione con campo email errato (manca la \'@\')', async () => {
         const response = await request(app)
             .post('/api/v1/register/client')
             .send({

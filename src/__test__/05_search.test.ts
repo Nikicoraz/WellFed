@@ -17,16 +17,12 @@ beforeAll(async () => {
         .send({ email: "shop@test.com", password: "Sicura!123#" });
 
     const merchantToken = mLogin.body.token;
-    const location = mLogin.headers.location;
-    
-    let shopID = mLogin.body.shopID;
-    if (!location) throw new Error("Location header missing");
+    const location = mLogin.headers.location!;
     const parts = location.split("/shop/");
-    if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found in location");
-    shopID = parts[1];
+    const shopID = parts[1];
 
     // Inserimento di prodotti con il mercante creato sopra
-    await request(app)
+    let res = await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
         .field("name", "Ciliegia Bio")
@@ -34,8 +30,9 @@ beforeAll(async () => {
         .field("origin", "Italia")
         .field("points", 10)
         .attach("image", Buffer.from("img"), "ciliegia.jpg");
+    expect(res.status).toBe(201);
 
-    await request(app)
+    res = await request(app)
         .post(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`)
         .field("name", "Mela Verde")
@@ -43,9 +40,10 @@ beforeAll(async () => {
         .field("origin", "Italia")
         .field("points", 5)
         .attach("image", Buffer.from("img"), "mela.jpg");
+    expect(res.status).toBe(201);
 
     // Nuovo mercante con nome ambiguo per testare i filtri
-    await request(app)
+    res = await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Ciliegia's shop")
         .field("email", "shop2@test.com")
@@ -53,7 +51,7 @@ beforeAll(async () => {
         .field("address", "Via Test")
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
-
+    expect(res.status).toBe(202);
 });
 
 describe("Search API", () => {

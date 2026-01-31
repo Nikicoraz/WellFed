@@ -6,9 +6,11 @@ let merchantToken: string;
 // Usato nei TC 4.0, 4.1, 4.2 e 4.3
 let shopID: string;
 
+let shopID2: string;
+
 let clientToken: string;
 beforeAll(async () => {
-    // Registrazione e login commerciante per ricavare shopID e merchantToken validi per l'inserimento di prodotti
+    // Registrazione e login commerciante1 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Shop")
@@ -18,19 +20,33 @@ beforeAll(async () => {
         .field("partitaIVA", "IT12345678901")
         .attach("image", Buffer.from("img"), "shop.jpg");
  
-    const login = await request(app)
+    let mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
 
-    merchantToken = login.body.token;
-    const location = login.headers.location;
+    merchantToken = mLogin.body.token;
+    let location = mLogin.headers.location!;
+    let parts = location.split("/shop/");
+    shopID = parts[1]!;
     
-    shopID = login.body.shopID;
-    if (!location) throw new Error("Location header missing");
-    const parts = location.split("/shop/");
-    if (parts.length < 2 || !parts[1]) throw new Error("Shop ID not found in location");
-    shopID = parts[1];
-    
+    // Registrazione e login commerciante2 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
+    await request(app)
+        .post("/api/v1/register/merchant")
+        .field("name", "Shop2")
+        .field("email", "shop2@test.com")
+        .field("password", "Sicura!123#")
+        .field("address", "Via Test")
+        .field("partitaIVA", "IT12345678901")
+        .attach("image", Buffer.from("img"), "shop.jpg");
+ 
+    mLogin = await request(app)
+        .post("/api/v1/login")
+        .send({ email: "shop2@test.com", password: "Sicura!123#" });
+
+    location = mLogin.headers.location!;
+    parts = location.split("/shop/");
+    shopID2 = parts[1]!;
+
     // Registrazione e login cliente per ricavare clientToken valido
     await request(app).post('/api/v1/register/client').send({
         username: 'cliente',
@@ -101,7 +117,7 @@ describe("Product Management", () => {
 
     it("4.4 Aggiunta prodotto con shopID inesistente", async () => {
         const res = await request(app)
-            .post(`/api/v1/shops/123456789012345678901234/products`)
+            .post(`/api/v1/shops/${shopID2}/products`)
             .set("Authorization", `Bearer ${merchantToken}`)
             .field("name", "Mela")
             .field("description", "desc")
