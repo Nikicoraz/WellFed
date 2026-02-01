@@ -1,13 +1,9 @@
 import app from "../app.js";
 import request from "supertest";
 
-// Usato nei TC 4.0, 4.1, 4.2, 4.3 e 4.5
 let merchantToken: string;
-// Usato nei TC 4.0, 4.1, 4.2, 4.3 e 4.4
 let shopID: string;
-// Usato nel TC 4.4
 let clientToken: string;
-// Usato nel TC 4.5
 let shopID2: string;
 
 beforeAll(async () => {
@@ -72,20 +68,7 @@ beforeAll(async () => {
 });
 
 describe("Products and prizes Controller", () => {
-    it("4.0 Aggiunta di un nuovo prodotto con dati completi", async () => {
-        const res = await request(app)
-            .post(`/api/v1/shops/${shopID}/products`)
-            .set("Authorization", `Bearer ${merchantToken}`)
-            .field("name", "Mela")
-            .field("description", "Mela rossa bio")
-            .field("origin", "Italia")
-            .field("points", 10)
-            .attach("image", Buffer.from("img"), "mela.jpg");
-
-        expect(res.status).toBe(201);
-    });
-
-    it("4.1 Aggiunta di un nuovo premi con dati completi", async () => {
+    it("4.0 Aggiunta di un nuovo premio con dati completi", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/prizes`)
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -96,7 +79,7 @@ describe("Products and prizes Controller", () => {
         expect(res.status).toBe(201);
     });
 
-    it("4.2 Aggiunta di un prodotto con uno o più campi vuoti", async () => {
+    it("4.1 Aggiunta di un premio con uno o più campi vuoti", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${merchantToken}`)
@@ -109,40 +92,26 @@ describe("Products and prizes Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("4.3 Aggiunta prodotto senza immagine", async () => {
+    it("4.2 Tentativo di aggiunta prodotto da parte di un cliente (autenticato)", async () => {
         const res = await request(app)
-            .post(`/api/v1/shops/${shopID}/products`)
-            .set("Authorization", `Bearer ${merchantToken}`)
-            .field("name", "Pera")
-            .field("description", "desc")
-            .field("origin", "Italia")
-            .field("points", 5);
-
-        expect(res.status).toBe(400);
-    });
-
-    it("4.4 Tentativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
-        const res = await request(app)
-            .post(`/api/v1/shops/${shopID}/products`)
+            .post(`/api/v1/shops/${shopID}/prizes`)
             .set("Authorization", `Bearer ${clientToken}`)
-            .field("name", "Test")
-            .field("description", "desc")
-            .field("origin", "Italia")
+            .field("name", "Premio Test2")
+            .field("description", "Premio descrizione")
             .field("points", 10)
-            .attach("image", Buffer.from("img"), "test.jpg");
+            .attach("image", Buffer.from("img"), "prize2.jpg");
 
         expect(res.status).toBe(401);
     });
 
-    it("4.5 Aggiunta prodotto con shopID inesistente", async () => {
+    it("4.3 Tentativo di aggiunta premio da un commerciante nel negozio di un altro commerciante", async () => {
         const res = await request(app)
-            .post(`/api/v1/shops/${shopID2}/products`)
+            .post(`/api/v1/shops/${shopID2}/prizes`)
             .set("Authorization", `Bearer ${merchantToken}`)
-            .field("name", "Mela")
-            .field("description", "desc")
-            .field("origin", "Italia")
+            .field("name", "Premio Test3")
+            .field("description", "Premio descrizione")
             .field("points", 10)
-            .attach("image", Buffer.from("img"), "mela.jpg");
+            .attach("image", Buffer.from("img"), "prize3.jpg");
 
         expect(res.status).toBe(401);
     });

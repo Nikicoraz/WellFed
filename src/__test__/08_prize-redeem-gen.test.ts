@@ -11,11 +11,8 @@ const jsQR = jsQRModule as unknown as (
     height: number
 ) => { data: string } | null;
 
-// Utilizzato nei TC 7.0, 7.1, 7.2, 7.3, 7.4
 let clientToken: string;
-// Utilizzato nei TC 7.0, 7.5, 7.6
 let prizeID: string;
-// Utilizzato nel TC 7.2
 let bigPrizeID: string;
 
 // Parameters
@@ -136,7 +133,7 @@ afterAll(async () => {
 });
 
 describe("QR Redeem Prize", () => {
-    it("7.0 Generazione QR per riscossione premio valida", async () => {
+    it("8.0 Generazione QR per riscossione premio valida", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -146,7 +143,7 @@ describe("QR Redeem Prize", () => {
         expect(res.text).toMatch(/^data:image\/png;base64,/);
     });
 
-    it("7.1 Generazione QR per riscossione premio con non abbastanza punti a disposizione", async () => {
+    it("8.1 Generazione QR per riscossione premio con non abbastanza punti a disposizione", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -155,7 +152,7 @@ describe("QR Redeem Prize", () => {
         expect(res.status).toBe(402);
     });
 
-    it("7.2 Generazione QR per riscossione premio con campo prizeID vuoto", async () => {
+    it("8.2 Generazione QR per riscossione premio con campo prizeID vuoto", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -164,7 +161,7 @@ describe("QR Redeem Prize", () => {
         expect(res.status).toBe(400);
     });
 
-    it("7.3 Generazione QR per riscossione premio con prizeID farlocco", async () => {
+    it("8.3 Generazione QR per riscossione premio con prizeID farlocco", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -173,7 +170,7 @@ describe("QR Redeem Prize", () => {
         expect(res.status).toBe(404);
     });
 
-    it("7.4 Generazione QR per riscossione premio senza token autorizzazione", async () => {
+    it("8.4 Generazione QR per riscossione premio senza token autorizzazione", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .send({ prizeID });
@@ -181,7 +178,7 @@ describe("QR Redeem Prize", () => {
         expect(res.status).toBe(401);
     });
 
-    it("7.5 Generazione QR per riscossione premio con token autorizzazione invalido", async () => {
+    it("8.5 Generazione QR per riscossione premio con token autorizzazione invalido", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", "Bearer invalid.token")

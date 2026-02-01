@@ -9,3 +9,4 @@ public
 !.vscode/extensions.json
 
 coverage/
+dist/src/__test__/
