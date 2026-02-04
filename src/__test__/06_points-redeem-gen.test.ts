@@ -7,7 +7,7 @@ let clientToken: string;
 let productID: string;
 
 beforeAll(async () => {
-    // Registrazione e login commerciante per ricavare merchantToken valido per la generazione di codici QR
+    // Registrazione commerciante
     let res = await request(app)
         .post('/api/v1/register/merchant')
         .field('name', 'Shop')
@@ -17,19 +17,18 @@ beforeAll(async () => {
         .field('partitaIVA', 'IT12345678901')
         .attach('image', Buffer.from('img'), 'shop.jpg');
     expect(res.status).toBe(202);
-
-    const mLogin = await request(app)
+    
+    // Login commerciante
+    res = await request(app)
         .post('/api/v1/login')
         .send({
             email: 'shop@test.com',
             password: 'Sicura!123#'
         });
-    expect(mLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    merchantToken = mLogin.body.token;
-    const location = mLogin.headers.location!;
-    const parts = location.split("/shop/");
-    const shopID = parts[1];
+    merchantToken = res.body.token;
+    const shopID = res.header.location!.split("/shop/")[1];
 
     // Aggiungo un prodotto
     res = await request(app)
@@ -42,14 +41,14 @@ beforeAll(async () => {
         .attach("image", Buffer.from("img"), "mela.jpg");
     expect(res.status).toBe(201);
 
-    const shopProducts = await request(app)
+    res = await request(app)
         .get(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`);
-    expect(shopProducts.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    productID = shopProducts.body[0].id;
+    productID = res.body[0].id;
 
-    // Registrazione e login cliente per ricavare clientToken valido
+    // Registrazione cliente
     res = await request(app)
         .post('/api/v1/register/client')
         .send({
@@ -59,15 +58,16 @@ beforeAll(async () => {
         });
     expect(res.status).toBe(201);
 
-    const cLogin = await request(app)
+    // Login cliente
+    res = await request(app)
         .post('/api/v1/login')
         .send({
             email: 'cliente@test.com',
             password: 'Sicura!123#'
         });
-    expect(cLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    clientToken = cLogin.body.token;
+    clientToken = res.body.token;
 });
 
 afterAll(async () => {
@@ -82,7 +82,6 @@ describe('Redeem points QR generation Controller', () => {
             .send([
                 { productID, quantity: 2 }
             ]);
-
         expect(res.status).toBe(200);
         expect(typeof res.text).toBe('string');
         expect(res.text).toMatch(/^data:image\/png;base64,/);
@@ -95,7 +94,6 @@ describe('Redeem points QR generation Controller', () => {
             .send([
                 { productID, quantity: 1 }
             ]);
-
         expect(res.status).toBe(400);
     });
 
@@ -104,7 +102,6 @@ describe('Redeem points QR generation Controller', () => {
             .post('/api/v1/QRCodes/assignPoints')
             .set('Authorization', `Bearer ${merchantToken}`)
             .send([]);
-
         expect(res.status).toBe(200);
         expect(res.text).toMatch(/^data:image\/png;base64,/);
     });
@@ -115,7 +112,6 @@ describe('Redeem points QR generation Controller', () => {
             .send([
                 { productID, quantity: 1 }
             ]);
-
         expect(res.status).toBe(401);
     });
 });

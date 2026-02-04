@@ -18,15 +18,13 @@ beforeAll(async () => {
         .attach("image", Buffer.from("img"), "shop.jpg");
     expect(res.status).toBe(202);
 
-    let mLogin = await request(app)
+    res = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
-    expect(mLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    merchantToken = mLogin.body.token;
-    let location = mLogin.headers.location!;
-    let parts = location.split("/shop/");
-    shopID = parts[1]!;
+    merchantToken = res.body.token;
+    shopID = res.header.location!.split("/shop/")[1]!;
 
     // Registrazione e login commerciante2 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
     res = await request(app)
@@ -39,14 +37,12 @@ beforeAll(async () => {
         .attach("image", Buffer.from("img"), "shop.jpg");
     expect(res.status).toBe(202);
 
-    mLogin = await request(app)
+    res = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop2@test.com", password: "Sicura!123#" });
-    expect(mLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    location = mLogin.headers.location!;
-    parts = location.split("/shop/");
-    shopID2 = parts[1]!;
+    shopID2 = res.header.location!.split("/shop/")[1]!;
 
     // Registrazione e login cliente per ricavare clientToken valido
     res = await request(app).post('/api/v1/register/client').send({
@@ -56,15 +52,15 @@ beforeAll(async () => {
     });
     expect(res.status).toBe(201);
 
-    const cLogin = await request(app)
+    res = await request(app)
         .post('/api/v1/login')
         .send({
             email: 'cliente@test.com',
             password: 'Sicura!123#'
         });
-    expect(cLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    clientToken = cLogin.body.token;
+    clientToken = res.body.token;
 });
 
 describe("Prizes Controller", () => {
@@ -88,7 +84,6 @@ describe("Prizes Controller", () => {
             .field("origin", "Italia")
             .field("points", 10)
             .attach("image", Buffer.from("img"), "mela.jpg");
-
         expect(res.status).toBe(400);
     });
 
@@ -100,7 +95,6 @@ describe("Prizes Controller", () => {
             .field("description", "Premio descrizione")
             .field("points", 10)
             .attach("image", Buffer.from("img"), "prize2.jpg");
-
         expect(res.status).toBe(401);
     });
 
@@ -112,7 +106,6 @@ describe("Prizes Controller", () => {
             .field("description", "Premio descrizione")
             .field("points", 10)
             .attach("image", Buffer.from("img"), "prize3.jpg");
-
         expect(res.status).toBe(401);
     });
 });

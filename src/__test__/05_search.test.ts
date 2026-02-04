@@ -13,15 +13,13 @@ beforeAll(async () => {
         .attach("image", Buffer.from("img"), "shop.jpg");
     expect(res.status).toBe(202);
 
-    const mLogin = await request(app)
+    res = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
-    expect(mLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    const merchantToken = mLogin.body.token;
-    const location = mLogin.headers.location!;
-    const parts = location.split("/shop/");
-    const shopID = parts[1];
+    const merchantToken = res.body.token;
+    const shopID = res.header.location!.split("/shop/")[1];
 
     // Inserimento di prodotti con il mercante creato sopra
     res = await request(app)
@@ -61,7 +59,6 @@ describe("Search Controller", () => {
         const res = await request(app)
             .get("/api/v1/search")
             .query({ query: "Ciliegia", filter: "products" });
-
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.products)).toBe(true);
         expect(res.body.products.length).toBeGreaterThan(0);    // deve ritornare il prodotto registrato sopra (filter: "shops")
@@ -72,7 +69,6 @@ describe("Search Controller", () => {
         const res = await request(app)
             .get("/api/v1/search")
             .query({ query: "negozio", filter: "shops" });
-
         expect(res.status).toBe(200);
         expect(res.body.shops.length).toBeGreaterThan(0);   // deve ritornare il negozio registrato sopra
         expect(res.body.products.length).toBe(0);           // non deve ritornare prodotti (filter: "shops")
@@ -82,7 +78,6 @@ describe("Search Controller", () => {
         const res = await request(app)
             .get("/api/v1/search")
             .query({ query: "Manuel"});
-
         expect(res.status).toBe(200);
         expect(res.body.products.length).toBe(0);
         expect(res.body.shops.length).toBe(0);
@@ -92,7 +87,6 @@ describe("Search Controller", () => {
         const res = await request(app)
             .get("/api/v1/search")
             .query({ query: "Ciliegia" });
-
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.products)).toBe(true);
         expect(Array.isArray(res.body.shops)).toBe(true);

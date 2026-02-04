@@ -32,7 +32,6 @@ describe('Login Controller', () => {
             password: 'Sicura!123#',
             SSO: false
         });
-
         expect(res.status).toBe(200);
         expect(res.body.token).toBeDefined();
         expect(res.headers.location).toBe('/');
@@ -43,7 +42,6 @@ describe('Login Controller', () => {
             email: 'commerciante@Ltest.com',
             password: 'Sicura!123#'
         });
-
         expect(res.status).toBe(200);
         expect(res.headers.location).toMatch(/\/shop\//);
     });
@@ -53,7 +51,6 @@ describe('Login Controller', () => {
             email: 'cliente@Ltest.com',
             password: 'sicur1!23#'
         });
-
         expect(res.status).toBe(401);
     });
 });

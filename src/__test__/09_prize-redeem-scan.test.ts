@@ -107,15 +107,13 @@ beforeAll(async () => {
         .attach("image", Buffer.from("img"), "shop.jpg");
     expect(res.status).toBe(202);
 
-    const mLogin = await request(app)
+    res = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
-    expect(mLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    merchantToken = mLogin.body.token;
-    const location = mLogin.header.location!;
-    const parts = location.split("/shop/");
-    shopID = parts[1]!;
+    merchantToken = res.body.token;
+    shopID = res.header.location!.split("/shop/")[1]!;
 
     // Inserimento prodotto
     res = await request(app)
@@ -129,20 +127,20 @@ beforeAll(async () => {
     expect(res.status).toBe(201);
 
     // Prendo il productID
-    const shopProducts = await request(app)
+    res = await request(app)
         .get(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`);
-    const productID = shopProducts.body[0].id;
+    const productID = res.body[0].id;
 
     // QR per assegnare punti al client
-    const qrResp = await request(app)
+    res = await request(app)
         .post("/api/v1/QRCodes/assignPoints")
         .set("Authorization", `Bearer ${merchantToken}`)
         .send([{ productID, quantity: PRODUCTS_BOUGHT }]);
-    expect(qrResp.status).toBe(200);
-    expect(qrResp.text).toMatch(/^data:image\/png;base64,/);
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/^data:image\/png;base64,/);
 
-    const jwtreq = await decodeQRJWT(qrResp.text);
+    const jwtreq = await decodeQRJWT(res.text);
 
     // Registrazione e accesso cliente
     res = await request(app)
@@ -150,12 +148,12 @@ beforeAll(async () => {
         .send({ username: "cliente", email: "cliente@test.com", password: "Sicura!123#" });
     expect(res.status).toBe(201);
 
-    const cLogin = await request(app)
+    res = await request(app)
         .post("/api/v1/login")
         .send({ email: "cliente@test.com", password: "Sicura!123#" });
-    expect(cLogin.status).toBe(200);
+    expect(res.status).toBe(200);
 
-    clientToken = cLogin.body.token;
+    clientToken = res.body.token;
 
     // Assegno punti al cliente
     res = await request(app)

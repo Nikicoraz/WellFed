@@ -16,31 +16,39 @@ let prizeID: string;
 let bigPrizeID: string;
 
 // Parameters
-const ppp = 10;         // Points assigned per units bought
-const p = 2;            // units bought
-const prp = 15;         // points needed to redeem the prize
-const bigprp = 100;     // points needed to redeem the big prize
+const PTS_PER_PRODUCT = 10;         // Points assigned per units bought
+const PRODUCTS_BOUGHT = 2;            // units bought
+const PTS_PER_PRIZE = 15;         // points needed to redeem the prize
+const PTS_PER_BIGPRIZE = 100;     // points needed to redeem the big prize
 
-// Funzione helper per generare e decodificare QR in JWT
-async function generateQrToken(productID: string, merchantToken: string): Promise<string> {
-    const qrResp = await request(app)
-        .post("/api/v1/QRCodes/assignPoints")
-        .set("Authorization", `Bearer ${merchantToken}`)
-        .send([{ productID, quantity: p }]);
-    expect(qrResp.status).toBe(200);
-    expect(qrResp.text).toMatch(/^data:image\/png;base64,/);
+// Decode QR JWT from data URL
+async function decodeQRDataUrl(dataUrl: string): Promise<string> {
+    const [, base64] = dataUrl.split(",");
+    if (!base64) throw new Error("Invalid data URL for QR decode");
 
-    const dataUrl: string = qrResp.text;
-    const base64 = dataUrl.split(",")[1]!;
     const img = await Jimp.read(Buffer.from(base64, "base64"));
     img.greyscale().contrast(1);
+
     const { data, width, height } = img.bitmap;
-    const code = jsQR(new Uint8ClampedArray(data), width, height)!;
+    const code = jsQR(new Uint8ClampedArray(data), width, height);
+    if (!code) throw new Error("QR decode failed: no QR code found");
+
     return code.data;
 }
 
+async function generateQrToken(productID: string, merchantToken: string): Promise<string> {
+    const res = await request(app)
+        .post("/api/v1/QRCodes/assignPoints")
+        .set("Authorization", `Bearer ${merchantToken}`)
+        .send([{ productID, quantity: PRODUCTS_BOUGHT }]);
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/^data:image\/png;base64,/);
+
+    return await decodeQRDataUrl(res.text);
+}
+
 beforeAll(async () => {
-    // Registrazione e login commerciante
+    // Registrazione commerciante
     let res = await request(app)
         .post("/api/v1/register/merchant")
         .field("name", "Shop")
@@ -51,34 +59,31 @@ beforeAll(async () => {
         .attach("image", Buffer.from("img"), "shop.jpg");
     expect(res.status).toBe(202);
 
+    // Login commerciante
     const mLogin = await request(app)
         .post("/api/v1/login")
         .send({ email: "shop@test.com", password: "Sicura!123#" });
     expect(mLogin.status).toBe(200);
 
     const merchantToken = mLogin.body.token;
-    const location = mLogin.header.location!;
-    const parts = location.split("/shop/");
-    const shopID = parts[1];
+    const shopID = mLogin.header.location!.split("/shop/")[1];
 
     // Genero premi
-    let prizeRes = await request(app)
-        .post(`/api/v1/shops/${shopID}/prizes`)
-        .set("Authorization", `Bearer ${merchantToken}`)
-        .field("name", "Premio Test")
-        .field("description", "Premio descrizione")
-        .field("points", prp)
-        .attach("image", Buffer.from("img"), "prize.jpg");
-    expect(prizeRes.status).toBe(201);
+    const prizes = [
+        { name: "Premio Test", points: PTS_PER_PRIZE },
+        { name: "Premio  Grande Test", points: PTS_PER_BIGPRIZE }
+    ];
 
-    prizeRes = await request(app)
-        .post(`/api/v1/shops/${shopID}/prizes`)
-        .set("Authorization", `Bearer ${merchantToken}`)
-        .field("name", "Premio Grande Test")
-        .field("description", "Premio descrizione")
-        .field("points", bigprp)
-        .attach("image", Buffer.from("img"), "prize.jpg");
-    expect(prizeRes.status).toBe(201);
+    for (const p of prizes) {
+        const prizeRes = await request(app)
+            .post(`/api/v1/shops/${shopID}/prizes`)
+            .set("Authorization", `Bearer ${merchantToken}`)
+            .field("name", p.name)
+            .field("description", "Premio descrizione")
+            .field("points", p.points)
+            .attach("image", Buffer.from("img"), "prize.jpg");
+        expect(prizeRes.status).toBe(201);
+    }
 
     const shopData = await request(app).get(`/api/v1/shops/${shopID}/prizes`);
     prizeID = shopData.body[0].id;
@@ -91,14 +96,14 @@ beforeAll(async () => {
         .field("name", "Banana")
         .field("description", "desc")
         .field("origin", "Ecuador")
-        .field("points", ppp)
+        .field("points", PTS_PER_PRODUCT)
         .attach("image", Buffer.from("img"), "banana.jpg");
     expect(res.status).toBe(201);
 
-    const shopProducts = await request(app)
+    res = await request(app)
         .get(`/api/v1/shops/${shopID}/products`)
         .set("Authorization", `Bearer ${merchantToken}`);
-    const productID = shopProducts.body[0].id;
+    const productID = res.body[0].id;
 
     // Registrazione cliente
     res = await request(app)
@@ -106,15 +111,14 @@ beforeAll(async () => {
         .send({ username: "cliente", email: "cliente@test.com", password: "Sicura!123#" });
     expect(res.status).toBe(201);
 
-    const cLogin = await request(app)
+    res = await request(app)
         .post("/api/v1/login")
         .send({ email: "cliente@test.com", password: "Sicura!123#" });
-    clientToken = cLogin.body.token;
-    expect(cLogin.status).toBe(200);
+    expect(res.status).toBe(200);
+    clientToken = res.body.token;
 
-    // Genero e scansiono QR per assegnazione punti
+    // Assign points to client
     const qrToken = await generateQrToken(productID, merchantToken);
-
     res = await request(app)
         .post("/api/v1/QRCodes/scanned")
         .set("Authorization", `Bearer ${clientToken}`)
