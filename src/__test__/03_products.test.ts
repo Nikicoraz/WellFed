@@ -67,7 +67,7 @@ beforeAll(async () => {
     clientToken = cLogin.body.token;
 });
 
-describe("Products and prizes Controller", () => {
+describe("Products Controller", () => {
     it("3.0 Aggiunta di un nuovo prodotto con dati completi", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)

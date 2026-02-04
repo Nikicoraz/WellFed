@@ -15,21 +15,25 @@ export interface TransactionItems {
 };
 
 export async function logTransaction(
-    issuerID: Types.ObjectId, receiverID: Types.ObjectId, points: number, type: TransactionType,
-    status: TransactionStatus, items: TransactionItems, date: Date) {
-
-    const t = await Transaction.create({
-        issuerID: issuerID,
-        receiverID: receiverID,
-        points: points,
+    issuerID: Types.ObjectId,
+    receiverID: Types.ObjectId,
+    points: number,
+    type: TransactionType,
+    status: TransactionStatus,
+    items: TransactionItems,
+    date: Date
+) {
+    await Transaction.create({
+        issuerID,
+        receiverID,
+        points,
         transactionType: type,
         transactionStatus: status,
-        items: items,
+        items,
         issuingDate: date
     });
-
-    t.save();
 }
+
 
 enum Entities {
     Merchant = "merchant",

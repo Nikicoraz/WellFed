@@ -67,7 +67,7 @@ beforeAll(async () => {
     clientToken = cLogin.body.token;
 });
 
-describe("Products and prizes Controller", () => {
+describe("Prizes Controller", () => {
     it("4.0 Aggiunta di un nuovo premio con dati completi", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/prizes`)

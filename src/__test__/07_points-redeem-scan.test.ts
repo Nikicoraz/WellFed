@@ -101,7 +101,7 @@ afterAll(async () => {
 });
 
 describe("Redeem points QR scan Controller", () => {
-    it("7.0 Scansione codice QR assegnazione punti", async () => {
+    it("7.0 Scansione codice QR per assegnazione punti", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
@@ -111,7 +111,7 @@ describe("Redeem points QR scan Controller", () => {
         expect(res.status).toBe(200);
     });
 
-    it("7.1 Scansione codice QR assegnazione punti già utilizzato", async () => {
+    it("7.1 Scansione codice QR per assegnazione punti già utilizzato", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
         await request(app)
             .post("/api/v1/QRCodes/scanned")
@@ -126,7 +126,7 @@ describe("Redeem points QR scan Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("7.2 Scansione codice QR assegnazione punti da mercante invece che cliente", async () => {
+    it("7.2 Scansione codice QR per assegnazione punti da commerciante invece che cliente", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
@@ -136,14 +136,25 @@ describe("Redeem points QR scan Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("7.3 Scansione codice QR assegnazione punti token alternato", async () => {  // Questo test genera un errore su terminale. Non ti curar di lui, ma guarda e passa
-        const qrToken = await generateQrToken(shopID, merchantToken);
-        const res = await request(app)
-            .post("/api/v1/QRCodes/scanned")
-            .set("Authorization", `Bearer ${clientToken}`)
-            .send({ token: qrToken + "abc" });
-
-        expect(res.status).toBe(400);
+    it("7.3 Scansione codice QR per assegnazione punti con token alternato/invalido", async () => {  
+        const stderrWrite = process.stderr.write;   //
+        const stdoutWrite = process.stdout.write;       //
+        process.stderr.write = () => {                  //
+            return true as never;                       //
+        };                                              //
+        process.stdout.write = () => {                  //
+            return true as never;                       //
+        };                                              //
+        try {                                           // -------------------
+            const qrToken = await generateQrToken(shopID, merchantToken);   //
+            const res = await request(app)                                  //
+                .post("/api/v1/QRCodes/scanned")                            //
+                .set("Authorization", `Bearer ${clientToken}`)              //
+                .send({ token: qrToken + "abc" });                          //
+            expect(res.status).toBe(400);                                   //
+        } finally {                                     // -------------------
+            process.stderr.write = stderrWrite;         //
+            process.stdout.write = stdoutWrite;         //
+        }                                               // Sopprime l'output di errore JsonWebTokenError ("invalid signature")
     });
-
 });

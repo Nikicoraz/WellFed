@@ -80,7 +80,7 @@ describe('Redeem points QR generation Controller', () => {
             .post('/api/v1/QRCodes/assignPoints')
             .set('Authorization', `Bearer ${merchantToken}`)
             .send([
-                { productID: productID, quantity: 2 }
+                { productID, quantity: 2 }
             ]);
 
         expect(res.status).toBe(200);
@@ -93,7 +93,7 @@ describe('Redeem points QR generation Controller', () => {
             .post('/api/v1/QRCodes/assignPoints')
             .set('Authorization', `Bearer ${clientToken}`)
             .send([
-                { productID: productID, quantity: 1 }
+                { productID, quantity: 1 }
             ]);
 
         expect(res.status).toBe(400);
@@ -113,7 +113,7 @@ describe('Redeem points QR generation Controller', () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
             .send([
-                { productID: productID, quantity: 1 }
+                { productID, quantity: 1 }
             ]);
 
         expect(res.status).toBe(401);

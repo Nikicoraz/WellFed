@@ -28,20 +28,14 @@ async function generateQrToken(productID: string, merchantToken: string): Promis
         .set("Authorization", `Bearer ${merchantToken}`)
         .send([{ productID, quantity: p }]);
     expect(qrResp.status).toBe(200);
+    expect(qrResp.text).toMatch(/^data:image\/png;base64,/);
 
     const dataUrl: string = qrResp.text;
-    if (!dataUrl.startsWith("data:image/")) throw new Error("Invalid QR Data URL");
-
-    const base64 = dataUrl.split(",")[1];
-    if (!base64) throw new Error("Failed to extract QR image data");
-
+    const base64 = dataUrl.split(",")[1]!;
     const img = await Jimp.read(Buffer.from(base64, "base64"));
     img.greyscale().contrast(1);
-
     const { data, width, height } = img.bitmap;
-    const code = jsQR(new Uint8ClampedArray(data), width, height);
-    if (!code) throw new Error("QR Code non trovato nell'immagine");
-
+    const code = jsQR(new Uint8ClampedArray(data), width, height)!;
     return code.data;
 }
 
@@ -132,7 +126,7 @@ afterAll(async () => {
     await clearAllPendingTimers();
 });
 
-describe("QR Redeem Prize", () => {
+describe("Redeem prize QR generation Controller", () => {
     it("8.0 Generazione QR per riscossione premio valida", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
