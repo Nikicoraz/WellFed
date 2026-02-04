@@ -87,7 +87,7 @@ describe('Redeem points QR generation Controller', () => {
         expect(res.text).toMatch(/^data:image\/png;base64,/);
     });
 
-    it('6.1 Tentativo di generazione QR con lista prodotti valida ma token di autenticazione di un cliente invece che di un commerciante', async () => {
+    it('6.1 Tentativo di generazione codice QR con lista prodotti valida ma token di autenticazione di un cliente invece che di un commerciante', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
             .set('Authorization', `Bearer ${clientToken}`)
@@ -97,7 +97,7 @@ describe('Redeem points QR generation Controller', () => {
         expect(res.status).toBe(400);
     });
 
-    it('6.2 Generazione QR con lista prodotti vuota', async () => {
+    it('6.2 Generazione codice QR con lista prodotti vuota', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
             .set('Authorization', `Bearer ${merchantToken}`)
@@ -106,7 +106,7 @@ describe('Redeem points QR generation Controller', () => {
         expect(res.text).toMatch(/^data:image\/png;base64,/);
     });
 
-    it('6.3 Generazione QR senza token', async () => {
+    it('6.3 Tentativo di generazione codice QR senza token', async () => {
         const res = await request(app)
             .post('/api/v1/QRCodes/assignPoints')
             .send([

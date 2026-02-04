@@ -141,7 +141,7 @@ describe("Redeem prize QR generation Controller", () => {
         expect(res.text).toMatch(/^data:image\/png;base64,/);
     });
 
-    it("8.1 Generazione QR per riscossione premio con non abbastanza punti a disposizione", async () => {
+    it("8.1 Tentativo di generazione codice QR per riscossione premio con non abbastanza punti a disposizione", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -150,7 +150,7 @@ describe("Redeem prize QR generation Controller", () => {
         expect(res.status).toBe(402);
     });
 
-    it("8.2 Generazione QR per riscossione premio con campo prizeID vuoto", async () => {
+    it("8.2 Tentativo di generazione codice QR per riscossione premio con campo prizeID vuoto", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -159,7 +159,7 @@ describe("Redeem prize QR generation Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("8.3 Generazione QR per riscossione premio con prizeID farlocco", async () => {
+    it("8.3 Tentativo di generazione codice QR per riscossione premio con prizeID farlocco", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", `Bearer ${clientToken}`)
@@ -168,7 +168,7 @@ describe("Redeem prize QR generation Controller", () => {
         expect(res.status).toBe(404);
     });
 
-    it("8.4 Generazione QR per riscossione premio senza token autorizzazione", async () => {
+    it("8.4 Tentativo di generazione codice QR per riscossione premio senza token autorizzazione", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .send({ prizeID });
@@ -176,7 +176,7 @@ describe("Redeem prize QR generation Controller", () => {
         expect(res.status).toBe(401);
     });
 
-    it("8.5 Generazione QR per riscossione premio con token autorizzazione invalido", async () => {
+    it("8.5 Tentativo di generazione codice QR per riscossione premio con token autorizzazione invalido", async () => {
         const res = await request(app)
             .post("/api/v1/QRCodes/redeemPrize")
             .set("Authorization", "Bearer invalid.token")

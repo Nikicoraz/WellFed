@@ -180,7 +180,7 @@ describe("Redeem prize QR scan Controller", () => {
         await checkClientPoints();
     });
 
-    it("9.1 Scansione codice QR per ritiro premio già utilizzato", async () => {
+    it("9.1 Tentativo di scansione codice QR per ritiro premio già utilizzato", async () => {
         const token = await generateRedeemQR();
         let res = await request(app)
             .post("/api/v1/QRCodes/scanned")
@@ -199,7 +199,7 @@ describe("Redeem prize QR scan Controller", () => {
         await checkClientPoints();
     });
 
-    it("9.2 Scansione codice QR per ritiro premio da cliente invece che commerciante", async () => {
+    it("9.2 Tentativo di scansione codice QR per ritiro premio da cliente invece che commerciante", async () => {
         const token = await generateRedeemQR();
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
@@ -209,7 +209,7 @@ describe("Redeem prize QR scan Controller", () => {
         await checkClientPoints();
     });
 
-    it("9.3 Scansione codice QR per ritiro premio con token alternato/invalido", async () => {
+    it("9.3 Tentativo di scansione codice QR per ritiro premio con token alternato/invalido", async () => {
         const token = await generateRedeemQR();
         const res = await silenceConsole(() => {
             return request(app)

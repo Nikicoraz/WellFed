@@ -123,7 +123,7 @@ describe("Redeem points QR scan Controller", () => {
         expect(res.status).toBe(200);
     });
 
-    it("7.1 Scansione codice QR per assegnazione punti già utilizzato", async () => {
+    it("7.1 Tentativo di scansione codice QR per assegnazione punti già utilizzato", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
         await request(app)
             .post("/api/v1/QRCodes/scanned")
@@ -138,7 +138,7 @@ describe("Redeem points QR scan Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("7.2 Scansione codice QR per assegnazione punti da commerciante invece che cliente", async () => {
+    it("7.2 Tentativo di scansione codice QR per assegnazione punti da commerciante invece che cliente", async () => {
         const qrToken = await generateQrToken(shopID, merchantToken);
         const res = await request(app)
             .post("/api/v1/QRCodes/scanned")
@@ -148,7 +148,7 @@ describe("Redeem points QR scan Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("7.3 Scansione codice QR per assegnazione punti con token alternato/invalido", async () => {  
+    it("7.3 Tentativo di scansione codice QR per assegnazione punti con token alternato/invalido", async () => {  
         await silenceConsole(async () => {
             const qrToken = await generateQrToken(shopID, merchantToken);
             const res = await silenceConsole(() => {
