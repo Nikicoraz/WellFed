@@ -1,10 +1,12 @@
 import app from "../app.js";
 import request from "supertest";
 
+let clientToken: string;
 let merchantToken: string;
 let shopID: string;
-let clientToken: string;
+let merchantToken2: string;
 let shopID2: string;
+let productID: string;
 
 beforeAll(async () => {
     // Registrazione e login commerciante1 per ricavare shopID e merchantToken validi per l'inserimento di prodotti
@@ -42,6 +44,7 @@ beforeAll(async () => {
         .send({ email: "shop2@test.com", password: "Sicura!123#" });
     expect(res.status).toBe(200);
 
+    merchantToken2 = res.body.token;
     shopID2 = res.header.location!.split("/shop/")[1]!;
 
     // Registrazione e login cliente per ricavare clientToken valido
@@ -114,5 +117,31 @@ describe("Products Controller", () => {
             .attach("image", Buffer.from("img"), "mela.jpg");
 
         expect(res.status).toBe(401);
+    });
+
+    it("3.4 Tentativo di eliminazione di un prodotto con token di autorizzazione legato ad un altro negozio", async () => {
+        let res = await request(app)
+            .get(`/api/v1/shops/${shopID}/products`);
+        expect(res.status).toBe(200);
+        productID = res.body[0].id; // <--Dovrebbe esserci la mela aggiunta nel test 3.0
+        
+        res = await request(app)
+            .delete(`/api/v1/shops/${shopID}/products/${productID}`)
+            .set("Authorization", `Bearer ${merchantToken2}`);
+        expect(res.status).toBe(401);
+    });
+
+    it("3.5 Eliminazione di un prodotto valida", async () => {
+        const res = await request(app)
+            .delete(`/api/v1/shops/${shopID}/products/${productID}`)
+            .set("Authorization", `Bearer ${merchantToken}`);
+        expect(res.status).toBe(200);
+    });
+
+    it("3.6 Tentativo di eliminazione di un prodotto inesistente/già eliminato", async () => {
+        const res = await request(app)
+            .delete(`/api/v1/shops/${shopID}/products/${productID}`)
+            .set("Authorization", `Bearer ${merchantToken}`);
+        expect(res.status).toBe(404);
     });
 });
