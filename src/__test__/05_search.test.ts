@@ -1,0 +1,96 @@
+import app from "../app.js";
+import request from "supertest";
+
+beforeAll(async () => {
+    // Registrazione e login per ricavare shopID e merchantToken validi per l'inserimento di prodotti
+    let res = await request(app)
+        .post("/api/v1/register/merchant")
+        .field("name", "Negozio di Alberto")
+        .field("email", "shop@test.com")
+        .field("password", "Sicura!123#")
+        .field("address", "Via Test")
+        .field("partitaIVA", "IT12345678901")
+        .attach("image", Buffer.from("img"), "shop.jpg");
+    expect(res.status).toBe(202);
+
+    res = await request(app)
+        .post("/api/v1/login")
+        .send({ email: "shop@test.com", password: "Sicura!123#" });
+    expect(res.status).toBe(200);
+
+    const merchantToken = res.body.token;
+    const shopID = res.header.location!.split("/shop/")[1];
+
+    // Inserimento di prodotti con il mercante creato sopra
+    res = await request(app)
+        .post(`/api/v1/shops/${shopID}/products`)
+        .set("Authorization", `Bearer ${merchantToken}`)
+        .field("name", "Ciliegia Bio")
+        .field("description", "Ciliegie fresche")
+        .field("origin", "Italia")
+        .field("points", 10)
+        .attach("image", Buffer.from("img"), "ciliegia.jpg");
+    expect(res.status).toBe(201);
+
+    res = await request(app)
+        .post(`/api/v1/shops/${shopID}/products`)
+        .set("Authorization", `Bearer ${merchantToken}`)
+        .field("name", "Mela Verde")
+        .field("description", "Mela")
+        .field("origin", "Italia")
+        .field("points", 5)
+        .attach("image", Buffer.from("img"), "mela.jpg");
+    expect(res.status).toBe(201);
+
+    // Nuovo mercante con nome ambiguo per testare i filtri
+    res = await request(app)
+        .post("/api/v1/register/merchant")
+        .field("name", "Ciliegia's shop")
+        .field("email", "shop2@test.com")
+        .field("password", "Sicura!123#")
+        .field("address", "Via Test")
+        .field("partitaIVA", "IT12345678901")
+        .attach("image", Buffer.from("img"), "shop.jpg");
+    expect(res.status).toBe(202);
+});
+
+describe("Search Controller", () => {
+    it("5.0 Ricerca prodotti per nome con filtro attivo", async () => {
+        const res = await request(app)
+            .get("/api/v1/search")
+            .query({ query: "Ciliegia", filter: "products" });
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body.products)).toBe(true);
+        expect(res.body.products.length).toBeGreaterThan(0);    // deve ritornare il prodotto registrato sopra (filter: "shops")
+        expect(res.body.shops.length).toBe(0);                  // non deve ritornare negozi (filter: "products")
+    });
+
+    it("5.1 Ricerca negozi per nome con filtro shops", async () => {
+        const res = await request(app)
+            .get("/api/v1/search")
+            .query({ query: "negozio", filter: "shops" });
+        expect(res.status).toBe(200);
+        expect(res.body.shops.length).toBeGreaterThan(0);   // deve ritornare il negozio registrato sopra
+        expect(res.body.products.length).toBe(0);           // non deve ritornare prodotti (filter: "shops")
+    });
+
+    it("5.2 Ricerca con nessuna corrispondenza", async () => {
+        const res = await request(app)
+            .get("/api/v1/search")
+            .query({ query: "Manuel"});
+        expect(res.status).toBe(200);
+        expect(res.body.products.length).toBe(0);
+        expect(res.body.shops.length).toBe(0);
+    });
+
+    it("5.3 Ricerca senza filtro esplicito", async () => {
+        const res = await request(app)
+            .get("/api/v1/search")
+            .query({ query: "Ciliegia" });
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body.products)).toBe(true);
+        expect(Array.isArray(res.body.shops)).toBe(true);
+        expect(res.body.products.length).toBeGreaterThan(0);    // dovrebbe ritornare il prodotto "Ciliegia" e
+        expect(res.body.shops.length).toBeGreaterThan(0);       // il mercante registrato con nome "Ciliegia's shop" in fase di seeding
+    });
+});
