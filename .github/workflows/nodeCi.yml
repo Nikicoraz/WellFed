@@ -18,6 +18,7 @@ jobs:
       DB_USER: ${{ secrets.DB_USER }}
       PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      ATLAS_CONNECTION: true
 
     strategy:
       matrix:
