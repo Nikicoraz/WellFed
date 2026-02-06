@@ -112,7 +112,7 @@ describe("Prizes Controller", () => {
         expect(res.status).toBe(401);
     });
 
-    it("4.4 Tentativo di eliminazione di un prodotto con token di autorizzazione legato ad un altro negozio", async () => {
+    it("4.4 Tentativo di eliminazione di un premio con token di autorizzazione legato ad un altro negozio", async () => {
         let res = await request(app)
             .get(`/api/v1/shops/${shopID}/prizes`);
         expect(res.status).toBe(200);
@@ -124,14 +124,14 @@ describe("Prizes Controller", () => {
         expect(res.status).toBe(401);
     });
 
-    it("4.5 Eliminazione di un prodotto valida", async () => {
+    it("4.5 Eliminazione di un premio valida", async () => {
         const res = await request(app)
             .delete(`/api/v1/shops/${shopID}/prizes/${prizeID}`)
             .set("Authorization", `Bearer ${merchantToken}`);
         expect(res.status).toBe(200);
     });
 
-    it("4.6 Tentativo di eliminazione di un prodotto inesistente/già eliminato", async () => {
+    it("4.6 Tentativo di eliminazione di un premio inesistente/già eliminato", async () => {
         const res = await request(app)
             .delete(`/api/v1/shops/${shopID}/prizes/${prizeID}`)
             .set("Authorization", `Bearer ${merchantToken}`);

@@ -108,8 +108,8 @@ beforeAll(async () => {
     expect(res.status).toBe(201);
 });
 
-afterAll(async () => {
-    await clearAllPendingTimers();
+afterAll(() => {
+    clearAllPendingTimers();
 });
 
 describe("Redeem points QR scan Controller", () => {
@@ -148,7 +148,7 @@ describe("Redeem points QR scan Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("7.3 Tentativo di scansione codice QR per assegnazione punti con token alternato/invalido", async () => {  
+    it("7.3 Tentativo di scansione codice QR per assegnazione punti con token alterato/invalido", async () => {  
         await silenceConsole(async () => {
             const qrToken = await generateQrToken(shopID, merchantToken);
             const res = await silenceConsole(() => {

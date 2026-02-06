@@ -8,8 +8,7 @@ beforeAll(async () => {
         .send({
             username: 'cliente',
             email: 'cliente@Ltest.com',
-            password: 'Sicura!123#',
-            SSO: false
+            password: 'Sicura!123#'
         });
     expect(res.status).toBe(201);
 
@@ -29,8 +28,7 @@ describe('Login Controller', () => {
     it('2.0 Accesso di un cliente con credenziali valide', async () => {
         const res = await request(app).post('/api/v1/login').send({
             email: 'cliente@Ltest.com',
-            password: 'Sicura!123#',
-            SSO: false
+            password: 'Sicura!123#'
         });
         expect(res.status).toBe(200);
         expect(res.body.token).toBeDefined();

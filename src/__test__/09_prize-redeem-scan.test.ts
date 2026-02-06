@@ -163,8 +163,8 @@ beforeAll(async () => {
     expect(res.status).toBe(200);
 });
 
-afterAll(async () => {
-    await clearAllPendingTimers();
+afterAll(() => {
+    clearAllPendingTimers();
 });
 
 describe("Redeem prize QR scan Controller", () => {
@@ -209,7 +209,7 @@ describe("Redeem prize QR scan Controller", () => {
         await checkClientPoints();
     });
 
-    it("9.3 Tentativo di scansione codice QR per ritiro premio con token alternato/invalido", async () => {
+    it("9.3 Tentativo di scansione codice QR per ritiro premio con token alterato/invalido", async () => {
         const token = await generateRedeemQR();
         const res = await silenceConsole(() => {
             return request(app)

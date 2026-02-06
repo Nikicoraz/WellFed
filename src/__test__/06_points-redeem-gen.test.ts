@@ -70,8 +70,8 @@ beforeAll(async () => {
     clientToken = res.body.token;
 });
 
-afterAll(async () => {
-    await clearAllPendingTimers();
+afterAll(() => {
+    clearAllPendingTimers();
 });
 
 describe('Redeem points QR generation Controller', () => {

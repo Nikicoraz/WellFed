@@ -206,8 +206,7 @@ router.post("/scanned", async(req, res) => {
             client.set(pointsString, oldPoints + points);
             client.save();
 
-            // >:I
-            await logTransaction(shopID, clientID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
+            logTransaction(shopID, clientID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
                 prizes: [],
                 products: productQuantityList
             }, new Date());
@@ -254,8 +253,8 @@ router.post("/scanned", async(req, res) => {
             
             client.set(pointPath, currentPoints - prize.points!);
             client.save();
-            // >:I
-            await logTransaction(clientID, shopID, prize.points!, TransactionType.PrizeRedeem, TransactionStatus.Success, {
+
+            logTransaction(clientID, shopID, prize.points!, TransactionType.PrizeRedeem, TransactionStatus.Success, {
                 prizes: [prizeID],
                 products: []
             }, new Date());

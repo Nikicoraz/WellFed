@@ -93,7 +93,7 @@ describe("Products Controller", () => {
         expect(res.status).toBe(400);
     });
 
-    it("3.2 Tentativo di aggiunta prodotto da parte di un cliente (Atuenticato)", async () => {
+    it("3.2 Tentativo di aggiunta prodotto da parte di un cliente (Autenticato)", async () => {
         const res = await request(app)
             .post(`/api/v1/shops/${shopID}/products`)
             .set("Authorization", `Bearer ${clientToken}`)

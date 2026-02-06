@@ -71,7 +71,7 @@ beforeAll(async () => {
     // Genero premi
     const prizes = [
         { name: "Premio Test", points: PTS_PER_PRIZE },
-        { name: "Premio  Grande Test", points: PTS_PER_BIGPRIZE }
+        { name: "Premio Grande Test", points: PTS_PER_BIGPRIZE }
     ];
 
     for (const p of prizes) {
@@ -126,8 +126,8 @@ beforeAll(async () => {
     expect(res.status).toBe(200);
 });
 
-afterAll(async () => {
-    await clearAllPendingTimers();
+afterAll(() => {
+    clearAllPendingTimers();
 });
 
 describe("Redeem prize QR generation Controller", () => {
