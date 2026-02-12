@@ -1,6 +1,6 @@
 import jwt, { type SignOptions } from "jsonwebtoken";
 import Client from "../models/client.js";
-import type { JwtCustomPayload } from "../middleware/tokenChecker.js";
+import type { JwtCustomPayload } from "../middleware/authentication.js";
 import Merchant from "../models/merchant.js";
 import { OAuth2Client } from "google-auth-library";
 import argon from "argon2";

@@ -1,8 +1,7 @@
-import type { AuthenticatedRequest } from "../middleware/tokenChecker.js";
+import { type AuthenticatedRequest, clientOnly } from "../middleware/authentication.js";
 import Client from "../models/client.js";
 import Notification from "../models/notification.js";
 import type { Types } from "mongoose";
-import clientOnly from "../middleware/clientOnly.js";
 import express from "express";
 
 const router = express.Router();
@@ -62,7 +61,7 @@ router.get("/", clientOnly,  async(req, res) => {
 
 router.patch("/:id", clientOnly, async(req, res) => {
     try {
-        const notificationID: string = req.params.id!;
+        const notificationID: string = req.params.id! as string;
         const areq = (req as AuthenticatedRequest).user;
 
 
@@ -89,7 +88,7 @@ router.patch("/:id", clientOnly, async(req, res) => {
 
 router.delete("/:id", clientOnly, async(req, res) => {
     try {
-        const notificationID: string = req.params.id!;
+        const notificationID: string = req.params.id! as string;
         const areq = (req as AuthenticatedRequest).user;
 
         const result = await Client.updateOne({

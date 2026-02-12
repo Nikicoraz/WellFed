@@ -13,7 +13,34 @@ export interface JwtCustomPayload extends JwtPayload{
     client: boolean
 }
 
-const tokenChecker = (req: express.Request, res: express.Response, next: () => void) =>{
+export const clientOnly = (req: express.Request, res: express.Response, next: () => void) => {
+    const areq = req as AuthenticatedRequest;
+    if (!areq.user.client) {
+        return res.sendStatus(400);
+    }
+
+    next();
+};
+
+export const merchantOnly = (req: express.Request, res: express.Response, next: () => void) => {
+    const areq = req as AuthenticatedRequest;
+    if (areq.user.client) {
+        return res.sendStatus(400);
+    }
+
+    next();
+};
+
+export const shopOwnerOnly = (req: express.Request, res: express.Response, next: () => void) => {
+    const areq = req as AuthenticatedRequest;
+    if (!req.params.shopID || req.params.shopID != areq.user.id.toString()) {
+        return res.sendStatus(401);
+    }
+
+    next();
+};
+
+export const tokenChecker = (req: express.Request, res: express.Response, next: () => void) => {
     if (!req.headers.authorization) {
         return res.sendStatus(401);
     }
@@ -35,5 +62,3 @@ const tokenChecker = (req: express.Request, res: express.Response, next: () => v
         }
     });
 };
-
-export default tokenChecker;
