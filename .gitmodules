@@ -1,3 +1,6 @@
 [submodule "frontend"]
 	path = frontend
 	url = https://github.com/Nikicoraz/WellFed-Frontend
+[submodule "traffic-simulator"]
+	path = traffic-simulator
+	url = https://github.com/Nikicoraz/asynchronous-centralized-traffic-entropy-simulator-wellfed
