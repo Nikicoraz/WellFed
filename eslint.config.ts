@@ -5,9 +5,10 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    ignores: ["**/node_modules/**", "eslint.config.ts", "**/dist/**", "**/frontend/**"],
+    ignores: ["**/node_modules/**", "eslint.config.ts", "**/dist/**", "**/frontend/**", "**/traffic-simulator/**"],
   },
-  { files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+  {
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.node },
@@ -26,7 +27,7 @@ export default defineConfig([
       'sort-imports': 'warn',
       'require-await': 'error',
       'no-undefined': 'error',
-      'keyword-spacing': ["warn", { "before": true, "after": true}]
+      'keyword-spacing': ["warn", { "before": true, "after": true }]
     },
   },
   tseslint.configs.recommended,
