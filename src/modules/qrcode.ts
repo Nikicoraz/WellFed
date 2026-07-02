@@ -8,6 +8,7 @@ import type { Types } from "mongoose";
 import express from "express";
 import jwt from "jsonwebtoken";
 import { logTransaction } from "./transactions.js";
+import { logger } from "./logger.js";
 import qrcode from "qrcode";
 
 const router = express.Router();
@@ -77,17 +78,23 @@ export function clearAllPendingTimers() {
 
 
 router.post("/assignPoints", merchantOnly, async (req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
         const authReq = req as AuthenticatedRequest;
 
         const array: AssignObject[] = req.body;
         let pointsSum = 0;
     
+        logger.info({ reqId, merchantId: authReq.user.id, items: array.length }, "QR assign request");
+
         for (const e of array) {
             const product = await Product.findById(e.productID);
-            if (product) {
-                pointsSum += (product.points ?? 0) * e.quantity;
+            if (!product) {
+                logger.warn({ reqId, productID: e.productID }, "Product missing in QR assignment");
+                continue;
             }
+            pointsSum += (product.points ?? 0) * e.quantity;
         }
     
         const payload: AssignmentQR = new AssignmentQR(array, pointsSum, authReq.user.id);
@@ -97,23 +104,28 @@ router.post("/assignPoints", merchantOnly, async (req, res) => {
 
         qrcode.toDataURL(token, {type: "image/jpeg"}, (err, code) => {
             if (err) {
-                console.error(err);
+                logger.error({ err }, "QR generation failed");
                 return res.sendStatus(500);
             }
             addPendingToken(token);
+
+            logger.info({ merchantId: authReq.user.id, pointsSum }, "QR generated");
+
             res.send(code);
         });
 
     } catch (e) {
-        console.error(e);
+        logger.error({ err: e }, "assignPoints failed");
         res.sendStatus(400);
     }
 });
 
 router.post("/redeemPrize", clientOnly, async (req, res) => {
+
     try {
         const authReq = req as AuthenticatedRequest;
 
+        
         const prizeID = req.body.prizeID.trim();
         if (prizeID == "") {
             return res.sendStatus(400);
@@ -157,19 +169,33 @@ router.post("/redeemPrize", clientOnly, async (req, res) => {
 });
 
 router.post("/scanned", async(req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
         const authReq = req as AuthenticatedRequest;
+
+        logger.info({ reqId }, "QR code received");
 
         const token: string = req.body.token.trim();
         const payload = jwt.verify(token, process.env.PRIVATE_KEY!);
         const qrPayload = payload as QR;
 
         if (!pendingTokens.includes(token)) { 
+            logger.warn({ reqId }, "Invalid or expired QR token");
             res.sendStatus(400);
             return;
         }
 
-        if (qrPayload.type == QRTypes.Assignment && authReq.user.client) {
+        const qrType = qrPayload?.type;
+        if (qrType == QRTypes.Assignment) {            
+            if (!authReq.user.client) {
+                logger.warn({ reqId, qrType, userId: authReq.user.id }, "QR rejected: assignment QR scanned by merchant");
+                res.sendStatus(400);
+                return;
+            }
+
+            logger.info({ reqId }, "Processing assignment QR");
+
             const clientID = authReq.user.id;
             const productQuantityList = (qrPayload as AssignmentQR).productQuantityList.map((e) => {
                 return {product: e.productID, quantity: e.quantity};
@@ -190,6 +216,7 @@ router.post("/scanned", async(req, res) => {
             // Se non sono presenti tutti i prodotti della richiesta nel negozio del mercante
             // allora il QR non è valido
             if (!shop) {
+                logger.warn({ reqId, shopID }, "QR rejected: shop does not match product set");
                 res.sendStatus(400);
                 return;
             }
@@ -197,6 +224,7 @@ router.post("/scanned", async(req, res) => {
 
             const client = await Client.findById(clientID);
             if (!client) {
+                logger.warn({ reqId }, "QR rejected: client not found (invalid or tampered ID)");
                 // ID falso
                 res.sendStatus(400);
                 return;
@@ -206,14 +234,27 @@ router.post("/scanned", async(req, res) => {
             client.set(pointsString, oldPoints + points);
             client.save();
 
+            logger.debug({ reqId, clientID, shopID }, "Client points updated");
+
             logTransaction(shopID, clientID, points, TransactionType.PointAssignment, TransactionStatus.Success, {
                 prizes: [],
                 products: productQuantityList
             }, new Date());
 
+            logger.debug({ reqId, clientID, shopID }, "Transtaction notified");
+
+            logger.info({ reqId, qrType, clientID, shopID, pointsAdded: points }, "Assignment QR applied");
             // Update finished
 
-        } else if (qrPayload.type == QRTypes.Redeem && !authReq.user.client) {
+        } else if (qrType == QRTypes.Redeem) {
+            if (authReq.user.client) {
+                logger.warn({ reqId, qrType, userId: authReq.user.id }, "QR rejected: redeem QR scanned by client");
+                res.sendStatus(403);
+                return;
+            }
+            
+            logger.info({ reqId }, "Processing redeem QR");
+
             const shopID = authReq.user.id;
             const clientID = (qrPayload as RedeemQR).clientID;
             const prizeID = (qrPayload as RedeemQR).prizeID;
@@ -225,12 +266,14 @@ router.post("/scanned", async(req, res) => {
 
             // Nel caso lo shop non abbia il premio
             if (!shop) {
+                logger.warn({ reqId, shopID, prizeID }, "QR rejected: shop does not have prize");
                 res.sendStatus(400);
                 return;
             }
 
             const prize = await Prize.findById(prizeID);
             if (!prize) {
+                logger.warn({ reqId, prizeID }, "QR rejected: huh?");
                 // What???
                 res.sendStatus(400);
                 return;
@@ -239,6 +282,7 @@ router.post("/scanned", async(req, res) => {
             // Scala i punti dall'utente
             const client = await Client.findById(clientID);
             if (!client) {
+                logger.warn({ reqId, clientID }, "QR rejected: client not found (invalid or tampered ID)");
                 // Id falso
                 res.sendStatus(400);
                 return;
@@ -247,6 +291,9 @@ router.post("/scanned", async(req, res) => {
             const pointPath = `points.${shopID}`;
             const currentPoints: number = client.get(pointPath);
             if (currentPoints - prize.points! < 0) {
+                logger.warn({ reqId, clientID, prizeID }, "QR rejected: insufficient points");
+                // needs more info? 
+                // logger.warn({ reqId, clientID, shopID, currentPoints, requiredPoints }, "..."); 
                 res.sendStatus(402);
                 return;
             }
@@ -254,22 +301,29 @@ router.post("/scanned", async(req, res) => {
             client.set(pointPath, currentPoints - prize.points!);
             client.save();
 
+            logger.debug({ reqId, clientID, shopID }, "Client points updated");
+
             logTransaction(clientID, shopID, prize.points!, TransactionType.PrizeRedeem, TransactionStatus.Success, {
                 prizes: [prizeID],
                 products: []
             }, new Date());
 
+            logger.debug({ reqId, clientID, shopID }, "Transtaction notified");
+
+
+            logger.info({ reqId, qrType, clientID, shopID, prizeID, pointsUsed: prize.points }, "Redeem QR applied");
         } else {
+            logger.error({ reqId, qrType }, "QR reject: unknown QR type");
             return res.sendStatus(400);
         }
-
 
         pendingTokens = pendingTokens.filter((e) =>{
             return e != token;
         });
+        
         res.sendStatus(200);
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "QR scan failed");
         res.sendStatus(400);
     }
 });

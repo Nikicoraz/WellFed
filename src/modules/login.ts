@@ -5,6 +5,7 @@ import Merchant from "../models/merchant.js";
 import { OAuth2Client } from "google-auth-library";
 import argon from "argon2";
 import express from "express";
+import { logger } from "./logger.js";
 import { sendNotification } from "./notifications.js";
 
 const router = express.Router();
@@ -12,11 +13,16 @@ const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
 const tokenOptions: SignOptions = {expiresIn: 86400};
 
 router.post("", async(req, res) => {
+    const reqId = (req.headers["x-request-id"] as string);
+
     try {
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
 
+        logger.info({ reqId, email }, "Login attempt");
+
         if (!email.match(simpleEmailRegex) || password == "") {
+            logger.warn({ reqId, email }, "Invalid login payload");
             res.sendStatus(401);
             return;
         }
@@ -34,6 +40,9 @@ router.post("", async(req, res) => {
                 };
                 res.location("/");
                 autenticated = true;
+                logger.info({ reqId, userId: user._id }, "Client authenticated");
+            } else {
+                logger.warn({ reqId, userId: user._id }, "Client password mismatch");
             }
         } else if ((user = await Merchant.findOne({email: email}).exec())) {
             if (await argon.verify(user.password!, password)) {
@@ -45,20 +54,26 @@ router.post("", async(req, res) => {
                 };
                 res.location("/shop/" + user._id);
                 autenticated = true;
+                logger.info({ reqId, userId: user._id }, "Merchant authenticated");
+            } else {
+                logger.warn({ reqId, userId: user._id }, "Merchant password mismatch");
             }
         }
 
-        if (!autenticated) {
+        if (!autenticated || !payload) {
+            logger.warn({ reqId, email }, "Authentication failed");
             res.sendStatus(401);
             return;
         }
 
-        const token = jwt.sign(payload!, process.env.PRIVATE_KEY!, tokenOptions);
+        const token = jwt.sign(payload, process.env.PRIVATE_KEY!, tokenOptions);
 
-        
+        logger.info({ reqId, userId: payload.id }, "JWT issued");
+
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
         res.json({token: token});
     } catch (e) {
+        logger.error({ err: e }, "Login handler crash");
         console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(401);
@@ -70,10 +85,13 @@ router.post("", async(req, res) => {
 
 
 router.post("/SSO", async (req, res) => {
+    const reqId = (req.headers["x-request-id"] as string);
+    
     const client = new OAuth2Client();
     let token = req.body.token;
 
     if (!token) {
+        logger.warn({ reqId }, "SSO missing token");
         res.sendStatus(400);
         return;
     }
@@ -88,7 +106,9 @@ router.post("/SSO", async (req, res) => {
     
         const payload = ticket.getPayload();
         if (!payload) {
-            return res.sendStatus(401);
+            logger.warn({ reqId }, "SSO invalid payload");
+            res.sendStatus(401);
+            return;
         }
 
         const user = await Client.findOne({
@@ -97,7 +117,9 @@ router.post("/SSO", async (req, res) => {
         });
 
         if (!user) {
-            return res.sendStatus(401);
+            logger.warn({ reqId, email: payload.email }, "SSO user not found");
+            res.sendStatus(401);
+            return;
         }
 
         const jwtPayload: JwtCustomPayload = {
@@ -108,10 +130,14 @@ router.post("/SSO", async (req, res) => {
         };
 
         const jwtToken = jwt.sign(jwtPayload, process.env.PRIVATE_KEY!, tokenOptions);
+        
+        logger.info({ reqId, userId: user._id }, "SSO login success");
+        
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
         res.location("/");
         res.json({token: jwtToken});
     } catch (e) {
+        logger.warn({ err: e}, "SSO authentication failed"); //should this be an error instead? mmmmmhm
         // Registrazione fallita
         res.sendStatus(400);
 
