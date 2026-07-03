@@ -147,7 +147,9 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
 
         // La password non rispetta i criteri di sicurezza
         if (!password.match(passwordRegex)) {
-            return res.sendStatus(400);
+            res.sendStatus(400);
+            imageUtil.deleteImage(uploadedImage);
+            return;
         }
 
         // Campi nome e email gia' presenti
