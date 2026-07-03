@@ -249,7 +249,7 @@ router.post("/scanned", async(req, res) => {
         } else if (qrType == QRTypes.Redeem) {
             if (authReq.user.client) {
                 logger.warn({ reqId, qrType, userId: authReq.user.id }, "QR rejected: redeem QR scanned by client");
-                res.sendStatus(403);
+                res.sendStatus(400);
                 return;
             }
             
