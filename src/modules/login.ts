@@ -73,7 +73,7 @@ router.post("", async(req, res) => {
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
         res.json({token: token});
     } catch (e) {
-        logger.error({ err: e }, "Login handler crash");
+        logger.error({ reqId, err: e }, "Login handler crash");
         console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(401);
@@ -137,12 +137,9 @@ router.post("/SSO", async (req, res) => {
         res.location("/");
         res.json({token: jwtToken});
     } catch (e) {
-        logger.warn({ err: e}, "SSO authentication failed"); //should this be an error instead? mmmmmhm
+        logger.warn({ reqId, err: e }, "SSO authentication failed"); //should this be an error instead? mmmmmhm
         // Registrazione fallita
         res.sendStatus(400);
-
-        // TODO: Potrebbe non essere necessario loggare l'errore a console per ogni autenticazione fallita
-        console.error(e);
     }
 });
 

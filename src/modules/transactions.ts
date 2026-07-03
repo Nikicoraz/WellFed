@@ -3,6 +3,7 @@ import Transaction, { TransactionStatus, TransactionType } from "../models/trans
 import type { AuthenticatedRequest } from "../middleware/authentication.js";
 import type { Types } from "mongoose";
 import express from "express";
+import { logger } from "./logger.js";
 
 const router = express.Router();
 
@@ -41,8 +42,13 @@ enum Entities {
 }
 
 router.get("/", async (req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
         const areq: AuthenticatedRequest = req as AuthenticatedRequest;
+        const userId = areq.user.id;
+
+        logger.info({ reqId, userId }, "Transaction history request");
 
         const search = await Transaction.find({
             $or: [
@@ -51,10 +57,12 @@ router.get("/", async (req, res) => {
             ]
         });
 
+        logger.debug({ reqId, userId, count: search.length }, "Transaction fetched from DB");
+        
         const userType: Entities = areq.user.client ? Entities.Client : Entities.Merchant;
         const otherEntity = userType == Entities.Client ? Entities.Merchant : Entities.Client;
 
-        res.json(search.map(transaction => {
+        const result = search.map((transaction) => {
             let isIssuer: boolean;
 
             /* eslint-disable indent */
@@ -85,9 +93,13 @@ router.get("/", async (req, res) => {
                 issuingDate: transaction.issuingDate,
                 items: transaction.items,
             };
-        }));
+        });
+
+        logger.info({ reqId, userId, returned: result.length }, "Transaction history returned");
+        
+        res.json(result);
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "Transaction history failed");
         res.sendStatus(500);
     }
 });

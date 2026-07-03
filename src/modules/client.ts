@@ -35,7 +35,7 @@ router.get("/", clientOnly, async(req, res) => {
             points: user.points
         });
     } catch (e) {
-        logger.error({ err: e}, "Client profile handler failure");
+        logger.error({ reqId, err: e }, "Client profile handler failed");
         console.error(e);
         res.sendStatus(401);
     }
