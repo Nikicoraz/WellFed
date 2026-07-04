@@ -1,3 +1,4 @@
+import { registeredClients, registeredMerchants } from "./prometheusClient.js";
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
 import { OAuth2Client } from "google-auth-library";
@@ -123,7 +124,8 @@ router.post("/client/SSO", async(req, res) => {
         });
 
         newClient.save();
-
+        
+        registeredClients.inc();
         logger.info({ reqId, userId: newClient._id, email }, "Client SSO registered");
 
         res.sendStatus(201);
@@ -204,6 +206,7 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
 
         await newMerchant.save();
 
+        registeredMerchants.inc();
         logger.info({ reqId, merchantId: newMerchant._id, email }, "Merchant registered");
 
         res.sendStatus(202);
