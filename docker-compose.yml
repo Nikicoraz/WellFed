@@ -13,6 +13,7 @@ services:
 
     backend:
         build: .
+        container_name: backend
         environment:
             - DB_USER=admin
             - DB_PASSWORD=root
@@ -26,6 +27,8 @@ services:
         restart: unless-stopped
         depends_on: 
             - mongo
+            - loki
+            - promtail
 
     mongo:
         image: mongo:latest
@@ -37,3 +40,33 @@ services:
         # Uncomment this to make the db persistent
         # volumes:
         #   - ./db:/data/db
+
+    loki:
+        image: grafana/loki:latest
+        container_name: loki
+        command: -config.file=/etc/loki/loki-config.yaml
+        ports:
+            - "3100:3100"
+        volumes:
+            - ./observability/loki/loki-config.yaml:/etc/loki/loki-config.yaml
+            
+
+    promtail:
+        image: grafana/promtail:latest
+        container_name: promtail
+        command: -config.file=/etc/promtail/promtail-config.yaml
+        volumes:
+            - ./observability/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml
+            - /var/log:/var/log
+            - /var/lib/docker/containers:/var/lib/docker/containers:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+        depends_on:
+            - loki
+
+    grafana:
+        image: grafana/grafana:11.6.0
+        container_name: grafana
+        ports:
+            - "3000:3000"
+        depends_on:
+            - loki
