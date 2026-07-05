@@ -43,7 +43,6 @@ router.post("", async(req, res) => {
                 };
                 res.location("/");
                 autenticated = true;
-                loginSuccess.inc();
                 logger.info({ reqId, userId: user._id }, "Client authenticated");
             } else {
                 loginErrors.inc();
@@ -59,7 +58,6 @@ router.post("", async(req, res) => {
                 };
                 res.location("/shop/" + user._id);
                 autenticated = true;
-                loginSuccess.inc();
                 logger.info({ reqId, userId: user._id }, "Merchant authenticated");
             } else {
                 loginErrors.inc();

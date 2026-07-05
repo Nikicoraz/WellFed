@@ -1,0 +1,16 @@
+global:
+  scrape_interval:     15s # How frequently to scrape targets by default
+  evaluation_interval: 15s # How frequently to evaluate rules
+
+scrape_configs:
+  - job_name: 'express-backend'
+    
+    # The HTTP resource path on which the targets expose metrics.
+    # Prometheus appends this to the target URL (Defaults to /metrics if omitted)
+    metrics_path: '/metrics'
+    
+    # Configures the protocol scheme used for requests. (Defaults to http)
+    scheme: 'http'
+
+    static_configs:
+      - targets: ['backend:8000']
