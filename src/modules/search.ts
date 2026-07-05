@@ -2,6 +2,7 @@ import Merchant from "../models/merchant.js";
 import ProductModel from "../models/product.js";
 import type { Types } from "mongoose";
 import express from "express";
+import { logger } from "./logger.js";
 
 const router = express.Router();
 
@@ -34,10 +35,14 @@ const emptyResult = {
 };
 
 router.get("/", async(req, res) => {
+    const reqId = req.headers["x-request-id"];
+
+    
     try {
         const query = req.query.query;
         const filter: SearchFilter | undefined  = req.query.filter as SearchFilter;
         if (!query) {
+            logger.debug({ reqId }, "Search request with empty query");
             res.json(emptyResult);
             return;
         }
@@ -45,6 +50,8 @@ router.get("/", async(req, res) => {
         // Nel caso le query siano troppo lente, si può usare meglio l'indice
         // impostando l'inizio della ricerca con '^', però si perdono i risultati parziali
         const searchQuery = new RegExp(`${query}` as string, "i");
+
+        logger.info({ reqId, query, filter }, "Search request started");
 
         // Spread operator per creare una copia
         const ret = {...emptyResult};
@@ -63,6 +70,8 @@ router.get("/", async(req, res) => {
                     shopID: e.shopID!
                 };
             });
+
+            logger.debug({ reqId, query, results: ret.products.length }, "Product search complete");
         }
 
         if (!filter || filter == SearchFilter.Shop) {
@@ -76,11 +85,15 @@ router.get("/", async(req, res) => {
                     image: "/public/images/merchants/" + e.image!
                 };
             });
+
+            logger.debug({ reqId, query, results: ret.shops.length }, "Shops search complete");
         }
+
+        logger.info({ reqId, query, products: ret.products.length, shops: ret.shops.length}, "Search completed");
 
         res.json(ret);
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "Search request failed");
         res.sendStatus(500);
     }
 });

@@ -2,32 +2,52 @@ import Merchant from "../models/merchant.js";
 import Prize from "../models/prize.js";
 import Product from "../models/product.js";
 import express from "express";
+import { logger } from "./logger.js";
 
 const router = express.Router();
 const imagePath = "/public/images/";
 
-router.get("", async(_, res) => {
+router.get("", async(req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
+        logger.info({ reqId }, "Fetch all shops request");
+
         const shops = await Merchant.find().exec();
-        res.json(shops.map((shop) => {
+
+        logger.debug({ reqId, count: shops.length }, "Shops fetched from DB");
+
+        const result = shops.map((shop) => {
             return {
                 id: shop._id.toString(),
                 name: shop.name,
                 address: shop.address,
                 image: `${imagePath}merchants/${shop.image}`
             };
-        }));
+        });
+
+        res.json(result);
+
+        logger.info({ reqId, count: result.length }, "All shops returned");
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "Failed to fetch all shops");
         res.sendStatus(500);
     }
 });
 
 
 router.get("/:shopID", async (req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
-        const shop = await Merchant.findById(req.params.shopID).exec();
+        const shopId = req.params.shopID;
+
+        logger.info({ reqId, shopId}, "Fetch shop by ID");
+
+        const shop = await Merchant.findById(shopId).exec();
+
         if (!shop) {
+            logger.warn({ reqId, shopId }, "Shop not found");
             res.sendStatus(404);
             return;
         }
@@ -38,17 +58,26 @@ router.get("/:shopID", async (req, res) => {
             address: shop.address,
             image: `${imagePath}merchants/${shop.image}`
         });
+
+        logger.info({ reqId, shopId }, "Shop returned");
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "Failed to fetch shop");
         res.sendStatus(500);
     }
 });
 
 router.get("/:shopID/products", async (req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
-        const shop = await Merchant.findById(req.params.shopID).exec();
+        const shopId = req.params.shopID;
+
+        logger.info({ reqId, shopId }, "Fetch shop products");
+
+        const shop = await Merchant.findById(shopId).exec();
 
         if (!shop) {
+            logger.warn({reqId, shopId }, "Shop not found (product)");
             res.sendStatus(404);
             return;
         }
@@ -59,7 +88,7 @@ router.get("/:shopID/products", async (req, res) => {
 
         const resolvedProducts = await Promise.all(productPromises);        
 
-        res.json(resolvedProducts
+        const products = resolvedProducts
             .filter((product) => {
                 return product !== null;    
             })
@@ -72,17 +101,24 @@ router.get("/:shopID/products", async (req, res) => {
                     image: `${imagePath}products/${product.image}`,
                     points: product.points
                 };
-            })
-        );
+            });
+        
+        logger.info({ reqId, shopId, count: products.length }, "Shops products returned");
+
+        res.json(products);
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "Failed to fetch shop products");
         res.sendStatus(500);
     }
 });
 
 router.get("/:shopID/products/:productID", async (req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
         const { shopID, productID } = req.params;
+        
+        logger.info({ reqId, shopId: shopID, productId: productID }, "Fetch product in shop");
 
         const shop = await Merchant.findOne({
             _id: shopID,
@@ -90,6 +126,7 @@ router.get("/:shopID/products/:productID", async (req, res) => {
         }).exec();
 
         if (!shop) {
+            logger.warn({ reqId, shopId: shopID, productID }, "Shop-product realtion not found");
             res.sendStatus(404);
             return;
         }
@@ -97,29 +134,41 @@ router.get("/:shopID/products/:productID", async (req, res) => {
         const product = await Product.findById(productID).exec();
 
         if (!product) {
+            logger.warn({ reqId, productId: productID }, "Product not found");
             res.sendStatus(404);
             return;
         }
 
-        res.json({
+        const result = {
             id: product._id.toString(),
             name: product.name,
             description: product.description,
             origin: product.origin,
             image: `${imagePath}products/${product.image}`,
             points: product.points
-        });
+        };
+
+        logger.info({ reqId, shopId: shopID, productId: productID }, "Product retruned");
+        res.json(result);
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e}, "Failed to fetch product");
         res.sendStatus(500);
     }
 });
 
 router.get("/:shopID/prizes", async (req, res) => {
+    const reqId = req.headers["x-request-id"];
+
     try {
+        const shopId = req.params.shopID;
+
+        logger.info({reqId, shopId }, "Fetch shop prizes");
+
         const shop = await Merchant.findById(req.params.shopID).exec();
 
+
         if (!shop) {
+            logger.warn({ reqId, shopId }, "Shop not found (prizes)");
             res.sendStatus(404);
             return;
         }
@@ -130,7 +179,7 @@ router.get("/:shopID/prizes", async (req, res) => {
 
         const resolvedPrizes = await Promise.all(prizesPromises);
 
-        res.json(resolvedPrizes
+        const prizes = resolvedPrizes
             .filter((prize) => {
                 return prize !== null;    
             })
@@ -142,17 +191,23 @@ router.get("/:shopID/prizes", async (req, res) => {
                     image: `${imagePath}prizes/${prize.image}`,
                     points: prize.points
                 };
-            })
-        );
+            });
+
+        logger.info({ reqId, shopId, count: prizes.length }, "Shop prized returned");
+        res.json(prizes);
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "Failed to fetch shop prizes");
         res.sendStatus(500);
     }
 });
 
 router.get("/:shopID/prizes/:prizeID", async (req, res) => {
+    const reqId = req.headers["x-request-id"] as string | undefined;
+
     try {
         const { shopID, prizeID } = req.params;
+
+        logger.info({ reqId, shopId: shopID, prizeId: prizeID }, "Fetch prize in shop");
 
         const shop = await Merchant.findOne({
             _id: shopID,
@@ -160,6 +215,7 @@ router.get("/:shopID/prizes/:prizeID", async (req, res) => {
         }).exec();
 
         if (!shop) {
+            logger.warn({ reqId, shopId: shopID, prizeId: prizeID }, "Shop-prize relation not found");
             res.sendStatus(404);
             return;
         }
@@ -167,20 +223,24 @@ router.get("/:shopID/prizes/:prizeID", async (req, res) => {
         const prize = await Prize.findById(prizeID).exec();
 
         if (!prize) {
+            logger.warn({ reqId, prizeId: prizeID }, "Prize not found");
             res.sendStatus(404);
             return;
         }
 
-        res.json({
+        const result = {
             id: prize._id.toString(),
             name: prize.name,
             description: prize.description,
             image: `${imagePath}prizes/${prize.image}`,
             points: prize.points
-        });
+        };
 
+        logger.info({ reqId, shopId: shopID, prizeId: prizeID }, "Prize retunred");
+
+        res.json(result);
     } catch (e) {
-        console.error(e);
+        logger.error({ reqId, err: e }, "Failed to fetch prize");
         res.sendStatus(500);
     }
 });
