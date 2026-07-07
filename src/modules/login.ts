@@ -1,4 +1,5 @@
 import jwt, { type SignOptions } from "jsonwebtoken";
+import { loginAttempts, loginErrors, loginSuccess } from "./prometheusClient.js";
 import Client from "../models/client.js";
 import type { JwtCustomPayload } from "../middleware/authentication.js";
 import Merchant from "../models/merchant.js";
@@ -14,14 +15,16 @@ const tokenOptions: SignOptions = {expiresIn: 86400};
 
 router.post("", async(req, res) => {
     const reqId = (req.headers["x-request-id"] as string);
-
+    
     try {
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
-
+        
+        loginAttempts.inc();
         logger.info({ reqId, email }, "Login attempt");
 
         if (!email.match(simpleEmailRegex) || password == "") {
+            loginErrors.inc();
             logger.warn({ reqId, email }, "Invalid login payload");
             res.sendStatus(401);
             return;
@@ -42,6 +45,7 @@ router.post("", async(req, res) => {
                 autenticated = true;
                 logger.info({ reqId, userId: user._id }, "Client authenticated");
             } else {
+                loginErrors.inc();
                 logger.warn({ reqId, userId: user._id }, "Client password mismatch");
             }
         } else if ((user = await Merchant.findOne({email: email}).exec())) {
@@ -56,11 +60,13 @@ router.post("", async(req, res) => {
                 autenticated = true;
                 logger.info({ reqId, userId: user._id }, "Merchant authenticated");
             } else {
+                loginErrors.inc();
                 logger.warn({ reqId, userId: user._id }, "Merchant password mismatch");
             }
         }
 
         if (!autenticated || !payload) {
+            loginErrors.inc();
             logger.warn({ reqId, email }, "Authentication failed");
             res.sendStatus(401);
             return;
@@ -68,6 +74,7 @@ router.post("", async(req, res) => {
 
         const token = jwt.sign(payload, process.env.PRIVATE_KEY!, tokenOptions);
 
+        loginSuccess.inc();
         logger.info({ reqId, userId: payload.id }, "JWT issued");
 
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
@@ -86,11 +93,13 @@ router.post("", async(req, res) => {
 
 router.post("/SSO", async (req, res) => {
     const reqId = (req.headers["x-request-id"] as string);
+    loginAttempts.inc();
     
     const client = new OAuth2Client();
     let token = req.body.token;
 
     if (!token) {
+        loginErrors.inc();
         logger.warn({ reqId }, "SSO missing token");
         res.sendStatus(400);
         return;
@@ -106,6 +115,7 @@ router.post("/SSO", async (req, res) => {
     
         const payload = ticket.getPayload();
         if (!payload) {
+            loginErrors.inc();
             logger.warn({ reqId }, "SSO invalid payload");
             res.sendStatus(401);
             return;
@@ -117,6 +127,7 @@ router.post("/SSO", async (req, res) => {
         });
 
         if (!user) {
+            loginErrors.inc();
             logger.warn({ reqId, email: payload.email }, "SSO user not found");
             res.sendStatus(401);
             return;
@@ -131,6 +142,7 @@ router.post("/SSO", async (req, res) => {
 
         const jwtToken = jwt.sign(jwtPayload, process.env.PRIVATE_KEY!, tokenOptions);
         
+        loginSuccess.inc();
         logger.info({ reqId, userId: user._id }, "SSO login success");
         
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);

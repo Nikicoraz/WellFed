@@ -1,5 +1,6 @@
 import { type AuthenticatedRequest, clientOnly, merchantOnly } from "../middleware/authentication.js";
 import { TransactionStatus, TransactionType } from "../models/transaction.js";
+import { activeTransactions, transactionCount, transactionDuration } from "./prometheusClient.js";
 import Client from "../models/client.js";
 import Merchant from "../models/merchant.js";
 import Prize from "../models/prize.js";
@@ -53,27 +54,48 @@ class RedeemQR implements QR {
     }
 }
 
-let pendingTokens: string[] = [];
-let timers: NodeJS.Timeout[] = [];
+let pendingTokens: PendingToken[] = [];
+class PendingToken {
+    token: string;
+    timeout: NodeJS.Timeout | null;
+    startTime: ReturnType<typeof transactionDuration.startTimer>;
+
+    constructor(token: string, timeout: NodeJS.Timeout | null = null) {
+        this.token = token;
+        this.timeout = timeout;
+        this.startTime = transactionDuration.startTimer();
+    }
+
+    clear() {
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+        }
+
+        pendingTokens = pendingTokens.filter(e => {
+            return e != this;
+        });
+
+        activeTransactions.dec();
+        this.startTime();
+    }
+}
+
 
 function addPendingToken(token: string) {
-    pendingTokens.push(token);
+    transactionCount.inc();
+    activeTransactions.inc();
+    const pending = new PendingToken(token);
+    pendingTokens.push(pending);
     const t = setTimeout(() => {
-        pendingTokens = pendingTokens.filter(e => {
-            return e !== token;
-        });
-        timers = timers.filter(timer => {
-            return timer !== t;
-        });
+        pending.clear();
     }, 1000 * 60 * 2); // 2 minutes
-    timers.push(t);
+    pending.timeout = t;
 }
 
 export function clearAllPendingTimers() {
-    timers.forEach(t => {
-        return clearTimeout(t);
+    pendingTokens.forEach(t => {
+        t.clear();
     });
-    timers = [];
 }
 
 
@@ -180,7 +202,8 @@ router.post("/scanned", async(req, res) => {
         const payload = jwt.verify(token, process.env.PRIVATE_KEY!);
         const qrPayload = payload as QR;
 
-        if (!pendingTokens.includes(token)) { 
+        // eslint-disable-next-line brace-style
+        if (!pendingTokens.some(t => { return t.token == token; })) { 
             logger.warn({ reqId }, "Invalid or expired QR token");
             res.sendStatus(400);
             return;
@@ -317,10 +340,10 @@ router.post("/scanned", async(req, res) => {
             return res.sendStatus(400);
         }
 
-        pendingTokens = pendingTokens.filter((e) =>{
-            return e != token;
-        });
         
+        // eslint-disable-next-line brace-style
+        pendingTokens.find(t => { return t.token == token; })?.clear();
+
         res.sendStatus(200);
     } catch (e) {
         logger.error({ reqId, err: e }, "QR scan failed");

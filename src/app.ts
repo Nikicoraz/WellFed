@@ -3,6 +3,7 @@ import client from './modules/client.js';
 import cors from 'cors';
 import express from "express";
 import login from "./modules/login.js";
+import { metricRouter } from "./modules/prometheusClient.js";
 import notifications from './modules/notifications.js';
 import qrcode from "./modules/qrcode.js";
 import registration from "./modules/registration.js";
@@ -21,6 +22,9 @@ app.use(cors({
 }));
 
 app.use("/api-docs", apiDocs);
+
+// Metrics
+app.use("/metrics", metricRouter);
 
 // Hello example is protected by authentication
 app.use("/api/v1/register/", registration);
