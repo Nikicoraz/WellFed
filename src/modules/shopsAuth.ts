@@ -8,6 +8,10 @@ import { shopOwnerOnly } from "../middleware/authentication.js";
 
 const router = express.Router();
 
+const log = logger.child({
+    tags: ["shopsAuth"]
+});
+
 router.post("/:shopID/products", shopOwnerOnly, imageUtil.uploadImage('products').single('image'), async (req, res) => {
     const reqId = req.headers["x-request-id"];
     try {
@@ -19,18 +23,18 @@ router.post("/:shopID/products", shopOwnerOnly, imageUtil.uploadImage('products'
 
         const shopId = req.params.shopID;
 
-        logger.info({ reqId, shopId, name }, "Product creation request");
+        log.info({ reqId, shopId, name }, "Product creation request");
 
         // Immagine non presente
         if (!uploadedImage) {
-            logger.warn({ reqId }, "Product creation missing image");
+            log.warn({ reqId }, "Product creation missing image");
             res.sendStatus(400);
             return;
         }
 
         // Campi vuoti
         if (name == "" || description == "" || origin == "") {
-            logger.warn({ reqId, shopId }, "Product creation invalid fields");
+            log.warn({ reqId, shopId }, "Product creation invalid fields");
             imageUtil.deleteImage(uploadedImage);
             res.sendStatus(400);
             return;
@@ -40,7 +44,7 @@ router.post("/:shopID/products", shopOwnerOnly, imageUtil.uploadImage('products'
         const shop = await Merchant.findById(req.params.shopID).exec();
 
         if (!shop) {
-            logger.warn({ reqId, shopId }, "Shop not found (create product)");
+            log.warn({ reqId, shopId }, "Shop not found (create product)");
             res.sendStatus(404);
             return;
         }
@@ -57,11 +61,11 @@ router.post("/:shopID/products", shopOwnerOnly, imageUtil.uploadImage('products'
         await newProduct.save();
         await Merchant.findByIdAndUpdate(req.params.shopID, { $push: { products: newProduct._id } }).exec();
 
-        logger.info({ reqId, shopId, productId: newProduct._id}, "Product created");
+        log.info({ reqId, shopId, productId: newProduct._id}, "Product created");
 
         res.sendStatus(201);
     } catch (e) {
-        logger.error({ reqId, err: e, shopId: req.params.shopID }, "Product creation failed");
+        log.error({ reqId, err: e, shopId: req.params.shopID }, "Product creation failed");
 
         imageUtil.deleteImage(req.file);
 
@@ -81,7 +85,7 @@ router.patch("/:shopID/products/:productID", shopOwnerOnly, imageUtil.uploadImag
         const { shopID, productID } = req.params;
         const { name, description, origin, points } = req.body;
 
-        logger.info({ reqId, shopId: shopID, productId: productID }, "Product update request");
+        log.info({ reqId, shopId: shopID, productId: productID }, "Product update request");
         // L'utilizzo di middleware fa si' che i tipi inferiti da req.params siano union "string | undefined"
         // Per non overcomplicare le cose viene utilizzato !
 
@@ -93,7 +97,7 @@ router.patch("/:shopID/products/:productID", shopOwnerOnly, imageUtil.uploadImag
 
         // Non esiste il negozio 
         if (!shop) {
-            logger.warn({ reqId, shopId: shopID, productId: productID }, "Shop not found");
+            log.warn({ reqId, shopId: shopID, productId: productID }, "Shop not found");
             res.sendStatus(404);
             imageUtil.deleteImage(uploadedImage);
             return;
@@ -104,7 +108,7 @@ router.patch("/:shopID/products/:productID", shopOwnerOnly, imageUtil.uploadImag
 
         // Non esiste il prodotto 
         if (!updatedProduct) {
-            logger.warn({ reqId, productId: productID }, "Product not found");
+            log.warn({ reqId, productId: productID }, "Product not found");
             res.sendStatus(404);
             imageUtil.deleteImage(uploadedImage);
             return;
@@ -115,7 +119,7 @@ router.patch("/:shopID/products/:productID", shopOwnerOnly, imageUtil.uploadImag
             if (field) {
                 field = field.trim();
                 if (field == "") {
-                    logger.warn({ reqId, productId: productID }, "Product update invalid field");
+                    log.warn({ reqId, productId: productID }, "Product update invalid field");
                     res.sendStatus(400);
                     imageUtil.deleteImage(uploadedImage);
                     return;
@@ -150,7 +154,7 @@ router.patch("/:shopID/products/:productID", shopOwnerOnly, imageUtil.uploadImag
                 // Elimina l'immagine vecchia
                 imageUtil.deleteImageFromPath(`products/${updatedProduct.image}`);
 
-                logger.debug({ reqId, productId: productID }, "Old product image deleted");
+                log.debug({ reqId, productId: productID }, "Old product image deleted");
             }
             // Aggiorna il campo immagine
             updatedProduct.image = uploadedImage.filename;
@@ -158,11 +162,11 @@ router.patch("/:shopID/products/:productID", shopOwnerOnly, imageUtil.uploadImag
 
         await updatedProduct.save();
 
-        logger.info({ reqId, productId: productID }, "Product updated");
+        log.info({ reqId, productId: productID }, "Product updated");
         res.sendStatus(200);
 
     } catch (e) {
-        logger.error({ reqId, err: e, productId: req.params.productID }, "Product update failed");
+        log.error({ reqId, err: e, productId: req.params.productID }, "Product update failed");
 
         imageUtil.deleteImage(req.file);
 
@@ -181,7 +185,7 @@ router.delete("/:shopID/products/:productID", shopOwnerOnly, async (req, res) =>
         const shopId = req.params.shopID!;
         const productId = req.params.productID!;
 
-        logger.info({ reqId, shopId, productId }, "Product delete request");
+        log.info({ reqId, shopId, productId }, "Product delete request");
 
         // Negozio il cui prodotto e' da eliminare
         const shop = await Merchant.findOne({ 
@@ -191,7 +195,7 @@ router.delete("/:shopID/products/:productID", shopOwnerOnly, async (req, res) =>
 
         // Non esiste il negozio 
         if (!shop) {
-            logger.warn({ reqId, shopId }, "Shop not found");
+            log.warn({ reqId, shopId }, "Shop not found");
             res.sendStatus(404);
             return;
         }
@@ -201,7 +205,7 @@ router.delete("/:shopID/products/:productID", shopOwnerOnly, async (req, res) =>
 
         // Non esiste il prodotto
         if (!product) {
-            logger.warn({ reqId, productId }, "Product not found");
+            log.warn({ reqId, productId }, "Product not found");
             res.sendStatus(404);
             return;
         }
@@ -210,7 +214,7 @@ router.delete("/:shopID/products/:productID", shopOwnerOnly, async (req, res) =>
         if (product.image) {
             imageUtil.deleteImageFromPath(`products/${product.image}`);
 
-            logger.debug({ reqId, productId }, "Product image deleted");
+            log.debug({ reqId, productId }, "Product image deleted");
         }
         
         // Eliminazione dalla lista dei prodotti del commericante
@@ -224,11 +228,11 @@ router.delete("/:shopID/products/:productID", shopOwnerOnly, async (req, res) =>
             }
         }).exec();
 
-        logger.info({ reqId, shopId, productId }, "Product deleted");
+        log.info({ reqId, shopId, productId }, "Product deleted");
 
         res.sendStatus(200);
     } catch (e) {
-        logger.error({ reqId, err: e }, "Product delete failed");
+        log.error({ reqId, err: e }, "Product delete failed");
 
         res.sendStatus(500);
     }
@@ -245,11 +249,11 @@ router.post("/:shopID/prizes", shopOwnerOnly, imageUtil.uploadImage('prizes').si
 
         const shopId = req.params.shopID;
 
-        logger.info({ reqId, shopId, name }, "Prize creation request");
+        log.info({ reqId, shopId, name }, "Prize creation request");
 
         // Immagine non presente
         if (!uploadedImage) {
-            logger.warn({ reqId, shopId }, "Prize missing image");
+            log.warn({ reqId, shopId }, "Prize missing image");
 
             res.sendStatus(400);
             return;
@@ -257,7 +261,7 @@ router.post("/:shopID/prizes", shopOwnerOnly, imageUtil.uploadImage('prizes').si
 
         // Campi vuoti
         if (name == "" || description == "") {
-            logger.warn({ reqId, shopId }, "Prize invalid fields");
+            log.warn({ reqId, shopId }, "Prize invalid fields");
 
             res.sendStatus(400);
             imageUtil.deleteImage(uploadedImage);
@@ -267,7 +271,7 @@ router.post("/:shopID/prizes", shopOwnerOnly, imageUtil.uploadImage('prizes').si
         const shop = await Merchant.findById(req.params.shopID).exec();
 
         if (!shop) {
-            logger.warn({ reqId, shopId }, "Shop not found (create prize)");
+            log.warn({ reqId, shopId }, "Shop not found (create prize)");
             res.sendStatus(404);
             return;
         }
@@ -282,11 +286,11 @@ router.post("/:shopID/prizes", shopOwnerOnly, imageUtil.uploadImage('prizes').si
         await newPrize.save();
         await Merchant.findByIdAndUpdate(req.params.shopID, { $push: { prizes: newPrize._id } }).exec();
 
-        logger.info({ reqId, shopId, prizeId: newPrize._id }, "Prize created");
+        log.info({ reqId, shopId, prizeId: newPrize._id }, "Prize created");
 
         res.sendStatus(201);
     } catch (e) {
-        logger.error({ reqId, err: e, shopId: req.params.shopId }, "Prize creation failed");
+        log.error({ reqId, err: e, shopId: req.params.shopId }, "Prize creation failed");
 
         imageUtil.deleteImage(req.file);
 
@@ -306,7 +310,7 @@ router.patch("/:shopID/prizes/:prizeID", shopOwnerOnly, imageUtil.uploadImage('p
         const { shopID, prizeID } = req.params;
         const { name, description, points } = req.body;
 
-        logger.info({ reqId, shopId: shopID, prizeId: prizeID }, "Prize update request");
+        log.info({ reqId, shopId: shopID, prizeId: prizeID }, "Prize update request");
 
         // L'utilizzo di middleware fa si' che i tipi inferiti da req.params siano union "string | undefined"
         // Per non overcomplicare le cose viene utilizzato !
@@ -319,7 +323,7 @@ router.patch("/:shopID/prizes/:prizeID", shopOwnerOnly, imageUtil.uploadImage('p
 
         // Non esiste il negozio 
         if (!shop) {
-            logger.warn({ reqId, shopId: shopID, prizeId: prizeID }, "Shop not found");
+            log.warn({ reqId, shopId: shopID, prizeId: prizeID }, "Shop not found");
             res.sendStatus(404);
             imageUtil.deleteImage(uploadedImage);
             return;
@@ -330,7 +334,7 @@ router.patch("/:shopID/prizes/:prizeID", shopOwnerOnly, imageUtil.uploadImage('p
 
         // Non esiste il prodotto 
         if (!updatedPrize) {
-            logger.warn({ reqId, prizeId: prizeID }, "Prize not found");
+            log.warn({ reqId, prizeId: prizeID }, "Prize not found");
             res.sendStatus(404);
             imageUtil.deleteImage(uploadedImage);
             return;
@@ -341,7 +345,7 @@ router.patch("/:shopID/prizes/:prizeID", shopOwnerOnly, imageUtil.uploadImage('p
             if (field) {
                 field = field.trim();
                 if (field == "") {
-                    logger.warn({ reqId, prizeId: prizeID }, "Prize update invalid field");
+                    log.warn({ reqId, prizeId: prizeID }, "Prize update invalid field");
                     res.sendStatus(400);
                     imageUtil.deleteImage(uploadedImage);
                     return;
@@ -375,7 +379,7 @@ router.patch("/:shopID/prizes/:prizeID", shopOwnerOnly, imageUtil.uploadImage('p
                 // Elimina l'immagine vecchia
                 imageUtil.deleteImageFromPath(`prizes/${updatedPrize.image}`);
 
-                logger.debug({ reqId, prizeId: prizeID }, "Old prize image deleted");
+                log.debug({ reqId, prizeId: prizeID }, "Old prize image deleted");
             }
             // Aggiorna il campo immagine
             updatedPrize.image = uploadedImage.filename;
@@ -383,11 +387,11 @@ router.patch("/:shopID/prizes/:prizeID", shopOwnerOnly, imageUtil.uploadImage('p
 
         await updatedPrize.save();
 
-        logger.info({ reqId, prizeId: prizeID }, "Prize updated");
+        log.info({ reqId, prizeId: prizeID }, "Prize updated");
 
         res.sendStatus(200);
     } catch (e) {
-        logger.error({ reqId, err: e, prizeId: req.params.prizeID}, "Prize update failed");
+        log.error({ reqId, err: e, prizeId: req.params.prizeID}, "Prize update failed");
 
         imageUtil.deleteImage(req.file);
 
@@ -406,7 +410,7 @@ router.delete("/:shopID/prizes/:prizeID", shopOwnerOnly, async (req, res) => {
         const shopID  = req.params.shopID!;
         const prizeID = req.params.prizeID!;
 
-        logger.info({ reqId, shopId: shopID, prizeId: prizeID }, "Prize delete request");
+        log.info({ reqId, shopId: shopID, prizeId: prizeID }, "Prize delete request");
 
         // Negozio il cui prodotto e' da eliminare
         const shop = await Merchant.findOne({ 
@@ -416,7 +420,7 @@ router.delete("/:shopID/prizes/:prizeID", shopOwnerOnly, async (req, res) => {
 
         // Non esiste il negozio 
         if (!shop) {
-            logger.warn({ reqId, shopId: shopID }, "Shop not found");
+            log.warn({ reqId, shopId: shopID }, "Shop not found");
             res.sendStatus(404);
             return;
         }
@@ -426,7 +430,7 @@ router.delete("/:shopID/prizes/:prizeID", shopOwnerOnly, async (req, res) => {
 
         // Non esiste il prodotto
         if (!prize) {
-            logger.warn({ reqId, prizeId: prizeID }, "Prize not found");
+            log.warn({ reqId, prizeId: prizeID }, "Prize not found");
             res.sendStatus(404);
             return;
         }
@@ -435,7 +439,7 @@ router.delete("/:shopID/prizes/:prizeID", shopOwnerOnly, async (req, res) => {
         if (prize.image) {
             imageUtil.deleteImageFromPath(`prizes/${prize.image}`);
 
-            logger.debug({ reqId, prizeId: prizeID }, "Prize image deleted");
+            log.debug({ reqId, prizeId: prizeID }, "Prize image deleted");
         }
         
         // Eliminazione dalla lista dei prodotti del commericante
@@ -449,11 +453,11 @@ router.delete("/:shopID/prizes/:prizeID", shopOwnerOnly, async (req, res) => {
             }
         }).exec();
 
-        logger.info({ reqId, shopId: shopID, prizeId: prizeID }, "Prize deleted");
+        log.info({ reqId, shopId: shopID, prizeId: prizeID }, "Prize deleted");
 
         res.sendStatus(200);
     } catch (e) {
-        logger.info({ reqId, err: e, shopId: req.params.shopID, prizeId: req.params.prizeID }, "Prize delete failed");
+        log.info({ reqId, err: e, shopId: req.params.shopID, prizeId: req.params.prizeID }, "Prize delete failed");
 
         res.sendStatus(500);
     }

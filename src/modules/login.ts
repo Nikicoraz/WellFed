@@ -12,6 +12,10 @@ const router = express.Router();
 const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
 const tokenOptions: SignOptions = {expiresIn: 86400};
 
+const log = logger.child({
+    tags: ["login"]
+});
+
 router.post("", async(req, res) => {
     const reqId = (req.headers["x-request-id"] as string);
 
@@ -19,10 +23,10 @@ router.post("", async(req, res) => {
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
 
-        logger.info({ reqId, email }, "Login attempt");
+        log.info({ reqId, email }, "Login attempt");
 
         if (!email.match(simpleEmailRegex) || password == "") {
-            logger.warn({ reqId, email }, "Invalid login payload");
+            log.warn({ reqId, email }, "Invalid login payload");
             res.sendStatus(401);
             return;
         }
@@ -40,9 +44,9 @@ router.post("", async(req, res) => {
                 };
                 res.location("/");
                 autenticated = true;
-                logger.info({ reqId, userId: user._id }, "Client authenticated");
+                log.info({ reqId, userId: user._id }, "Client authenticated");
             } else {
-                logger.warn({ reqId, userId: user._id }, "Client password mismatch");
+                log.warn({ reqId, userId: user._id }, "Client password mismatch");
             }
         } else if ((user = await Merchant.findOne({email: email}).exec())) {
             if (await argon.verify(user.password!, password)) {
@@ -54,26 +58,26 @@ router.post("", async(req, res) => {
                 };
                 res.location("/shop/" + user._id);
                 autenticated = true;
-                logger.info({ reqId, userId: user._id }, "Merchant authenticated");
+                log.info({ reqId, userId: user._id }, "Merchant authenticated");
             } else {
-                logger.warn({ reqId, userId: user._id }, "Merchant password mismatch");
+                log.warn({ reqId, userId: user._id }, "Merchant password mismatch");
             }
         }
 
         if (!autenticated || !payload) {
-            logger.warn({ reqId, email }, "Authentication failed");
+            log.warn({ reqId, email }, "Authentication failed");
             res.sendStatus(401);
             return;
         }
 
         const token = jwt.sign(payload, process.env.PRIVATE_KEY!, tokenOptions);
 
-        logger.info({ reqId, userId: payload.id }, "JWT issued");
+        log.info({ reqId, userId: payload.id }, "JWT issued");
 
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
         res.json({token: token});
     } catch (e) {
-        logger.error({ reqId, err: e }, "Login handler crash");
+        log.error({ reqId, err: e }, "Login handler crash");
         console.error(e);
         if (e instanceof TypeError) {
             res.sendStatus(401);
@@ -91,7 +95,7 @@ router.post("/SSO", async (req, res) => {
     let token = req.body.token;
 
     if (!token) {
-        logger.warn({ reqId }, "SSO missing token");
+        log.warn({ reqId }, "SSO missing token");
         res.sendStatus(400);
         return;
     }
@@ -106,7 +110,7 @@ router.post("/SSO", async (req, res) => {
     
         const payload = ticket.getPayload();
         if (!payload) {
-            logger.warn({ reqId }, "SSO invalid payload");
+            log.warn({ reqId }, "SSO invalid payload");
             res.sendStatus(401);
             return;
         }
@@ -117,7 +121,7 @@ router.post("/SSO", async (req, res) => {
         });
 
         if (!user) {
-            logger.warn({ reqId, email: payload.email }, "SSO user not found");
+            log.warn({ reqId, email: payload.email }, "SSO user not found");
             res.sendStatus(401);
             return;
         }
@@ -131,13 +135,13 @@ router.post("/SSO", async (req, res) => {
 
         const jwtToken = jwt.sign(jwtPayload, process.env.PRIVATE_KEY!, tokenOptions);
         
-        logger.info({ reqId, userId: user._id }, "SSO login success");
+        log.info({ reqId, userId: user._id }, "SSO login success");
         
         sendNotification("null", "Nuovo Login", `Hai effettuato un login in data ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, user!._id);
         res.location("/");
         res.json({token: jwtToken});
     } catch (e) {
-        logger.warn({ reqId, err: e }, "SSO authentication failed"); //should this be an error instead? mmmmmhm
+        log.warn({ reqId, err: e }, "SSO authentication failed"); //should this be an error instead? mmmmmhm
         // Registrazione fallita
         res.sendStatus(400);
     }

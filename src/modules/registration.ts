@@ -11,6 +11,10 @@ const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
 const partitaIVARegex = /(IT)? ?\d{11}/;
 const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*\-_]).{8,40}$/;
 
+const log = logger.child({
+    tags: ["registration"]
+});
+
 router.post("/client", async(req, res) => {
     const reqId = req.headers["x-request-id"];
 
@@ -19,21 +23,21 @@ router.post("/client", async(req, res) => {
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
     
-        logger.info({ reqId, username, email }, "Client registration attempt");
+        log.info({ reqId, username, email }, "Client registration attempt");
 
         if (username == "" || !email.match(simpleEmailRegex) || password == "") {
-            logger.warn({ reqId, username, email }, "Client registration invalid payload");
+            log.warn({ reqId, username, email }, "Client registration invalid payload");
             return res.sendStatus(400);
         }
 
         // La password non rispetta i requisiti minimi di complessità
         if (!password.match(passwordRegex)) {
-            logger.warn({ reqId, email }, "Client registration weak password");
+            log.warn({ reqId, email }, "Client registration weak password");
             return res.sendStatus(400);
         }
 
         if (await Client.findOne({email: email}) || await Client.findOne({username: username}) || await Merchant.findOne({email: email})) {
-            logger.warn({ reqId, username, email }, "Client registration conflict");
+            log.warn({ reqId, username, email }, "Client registration conflict");
             res.sendStatus(409);
             return;
         }
@@ -49,13 +53,13 @@ router.post("/client", async(req, res) => {
 
         await client.save();
 
-        logger.info({ reqId }, "Client registered");
+        log.info({ reqId }, "Client registered");
         res.sendStatus(201);
     } catch (e) {
         // Nel caso non riesca ad accedere al body oppure al fare il trim alle opzioni, allora
         // è stata inviata una richiesta non valida
 
-        logger.error({ reqId }, "Client registration error");
+        log.error({ reqId }, "Client registration error");
         if (e instanceof TypeError) {
             res.sendStatus(400);
         } else {
@@ -71,7 +75,7 @@ router.post("/client/SSO", async(req, res) => {
     try {
         const token = req.body.token.trim();
 
-        logger.info({ reqId }, "Client SSO registration attempt");
+        log.info({ reqId }, "Client SSO registration attempt");
 
         const ticket = await client.verifyIdToken({
             idToken: token,
@@ -85,7 +89,7 @@ router.post("/client/SSO", async(req, res) => {
         const payload = ticket.getPayload();
 
         if (!payload) {
-            logger.warn({ reqId }, "Client SSO invalid payload");
+            log.warn({ reqId }, "Client SSO invalid payload");
             return res.sendStatus(401);
         }
 
@@ -93,7 +97,7 @@ router.post("/client/SSO", async(req, res) => {
         const username = payload["given_name"];
 
         if (!email || !username) {
-            logger.warn({ reqId }, "Client SSO missing fields");
+            log.warn({ reqId }, "Client SSO missing fields");
             return res.sendStatus(400);
         }
 
@@ -106,12 +110,12 @@ router.post("/client/SSO", async(req, res) => {
         });
 
         if ((user && !user.SSO) || merchant) {
-            logger.warn({ reqId, email }, "Client SSO blocked: local account exists");
+            log.warn({ reqId, email }, "Client SSO blocked: local account exists");
             return res.sendStatus(422); // Esiste già un account con credenziali locali
         }
 
         if (user && user.SSO) {
-            logger.warn({ reqId, email }, "Client SSO conflict: already exists");
+            log.warn({ reqId, email }, "Client SSO conflict: already exists");
             return res.sendStatus(409); // Esiste già l'account
         }
         
@@ -124,13 +128,13 @@ router.post("/client/SSO", async(req, res) => {
 
         newClient.save();
 
-        logger.info({ reqId, userId: newClient._id, email }, "Client SSO registered");
+        log.info({ reqId, userId: newClient._id, email }, "Client SSO registered");
 
         res.sendStatus(201);
     } catch (e) {
         // Nel caso non riesca ad accedere al body oppure al fare il trim alle opzioni, allora
         // è stata inviata una richiesta non valida
-        logger.error({ reqId, err: e }, "Client SSO registration error");
+        log.error({ reqId, err: e }, "Client SSO registration error");
 
         if (e instanceof TypeError) {
             res.sendStatus(401);
@@ -151,18 +155,18 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
         const email: string = req.body.email.trim();
         const password: string = req.body.password.trim();
 
-        logger.info({ reqId, name, email }, "Merchant registration attempt");
+        log.info({ reqId, name, email }, "Merchant registration attempt");
 
         // Immagine non presente
         if (!uploadedImage) {
-            logger.warn({ reqId, email }, "Merchant registration missing image");
+            log.warn({ reqId, email }, "Merchant registration missing image");
             res.sendStatus(400);
             return;
         }
 
         // Campi vuoti
         if (name == "" || partitaIVA == "" || address == "" || !email.match(simpleEmailRegex) || password == "") {
-            logger.warn({ reqId, email }, "Merchant registration invalid payload");
+            log.warn({ reqId, email }, "Merchant registration invalid payload");
             res.sendStatus(400);
             imageUtil.deleteImage(uploadedImage);
             return;
@@ -170,7 +174,7 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
 
         // PartitaIVA non valida
         if (!partitaIVA.match(partitaIVARegex)) {
-            logger.warn({ reqId, partitaIVA }, "Merchant registration invalid IVA");
+            log.warn({ reqId, partitaIVA }, "Merchant registration invalid IVA");
             res.sendStatus(403);
             imageUtil.deleteImage(uploadedImage);
             return;
@@ -180,13 +184,13 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
         if (!password.match(passwordRegex)) {
             res.sendStatus(400);
             imageUtil.deleteImage(uploadedImage);
-            logger.warn({ reqId, email }, "Merchant registration weak password");
+            log.warn({ reqId, email }, "Merchant registration weak password");
             return;
         }
 
         // Campi nome e email gia' presenti
         if ((await Merchant.find({name: name}).exec()).length > 0 || (await Merchant.find({email: email}).exec()).length > 0 || (await Client.findOne({email: email}))) {
-            logger.warn({ reqId, email, name }, "Merchant registration conflict");
+            log.warn({ reqId, email, name }, "Merchant registration conflict");
             res.sendStatus(409);
             imageUtil.deleteImage(uploadedImage);
             return;
@@ -204,12 +208,12 @@ router.post("/merchant", imageUtil.uploadImage('merchants').single('image'), asy
 
         await newMerchant.save();
 
-        logger.info({ reqId, merchantId: newMerchant._id, email }, "Merchant registered");
+        log.info({ reqId, merchantId: newMerchant._id, email }, "Merchant registered");
 
         res.sendStatus(202);
 
     } catch (e) {
-        logger.error({ reqId, err: e }, "Merchant registration error");
+        log.error({ reqId, err: e }, "Merchant registration error");
 
         imageUtil.deleteImage(req.file);
 

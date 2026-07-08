@@ -6,6 +6,10 @@ import { logger } from "./logger.js";
 
 const router = express.Router();
 
+const log = logger.child({
+    tags: ["search"]
+});
+
 enum SearchFilter{
     Product="products",
     Shop="shops"
@@ -42,7 +46,7 @@ router.get("/", async(req, res) => {
         const query = req.query.query;
         const filter: SearchFilter | undefined  = req.query.filter as SearchFilter;
         if (!query) {
-            logger.debug({ reqId }, "Search request with empty query");
+            log.debug({ reqId }, "Search request with empty query");
             res.json(emptyResult);
             return;
         }
@@ -51,7 +55,7 @@ router.get("/", async(req, res) => {
         // impostando l'inizio della ricerca con '^', però si perdono i risultati parziali
         const searchQuery = new RegExp(`${query}` as string, "i");
 
-        logger.info({ reqId, query, filter }, "Search request started");
+        log.info({ reqId, query, filter }, "Search request started");
 
         // Spread operator per creare una copia
         const ret = {...emptyResult};
@@ -71,7 +75,7 @@ router.get("/", async(req, res) => {
                 };
             });
 
-            logger.debug({ reqId, query, results: ret.products.length }, "Product search complete");
+            log.debug({ reqId, query, results: ret.products.length }, "Product search complete");
         }
 
         if (!filter || filter == SearchFilter.Shop) {
@@ -86,14 +90,14 @@ router.get("/", async(req, res) => {
                 };
             });
 
-            logger.debug({ reqId, query, results: ret.shops.length }, "Shops search complete");
+            log.debug({ reqId, query, results: ret.shops.length }, "Shops search complete");
         }
 
-        logger.info({ reqId, query, products: ret.products.length, shops: ret.shops.length}, "Search completed");
+        log.info({ reqId, query, products: ret.products.length, shops: ret.shops.length}, "Search completed");
 
         res.json(ret);
     } catch (e) {
-        logger.error({ reqId, err: e }, "Search request failed");
+        log.error({ reqId, err: e }, "Search request failed");
         res.sendStatus(500);
     }
 });
