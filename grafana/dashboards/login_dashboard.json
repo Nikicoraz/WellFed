@@ -26,10 +26,12 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
+      "description": "This module tracks login attempts, successful login and login errors over time",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "fixedColor": "green",
+            "mode": "palette-classic"
           },
           "mappings": [],
           "thresholds": {
@@ -37,15 +39,57 @@
             "steps": [
               {
                 "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tentativi di login totali"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Login con successo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Login senza successo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -57,7 +101,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "area",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
@@ -79,7 +123,7 @@
           "expr": "login_attempts{instance=\"backend:8000\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "legendFormat": "__auto",
+          "legendFormat": "Tentativi di login totali",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -96,7 +140,7 @@
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Login con successo",
           "range": true,
           "refId": "C",
           "useBackend": false
@@ -113,13 +157,13 @@
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Login senza successo",
           "range": true,
           "refId": "B",
           "useBackend": false
         }
       ],
-      "title": "Panel Title",
+      "title": "Login data",
       "type": "stat"
     },
     {
@@ -141,7 +185,38 @@
           },
           "mappings": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Login con successo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Login senza successo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -178,7 +253,7 @@
           "expr": "login_errors{instance=\"backend:8000\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "legendFormat": "__auto",
+          "legendFormat": "Login con successo",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -195,13 +270,13 @@
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Login senza successo",
           "range": true,
           "refId": "B",
           "useBackend": false
         }
       ],
-      "title": "Panel Title",
+      "title": "Rapporto successo/insuccesso",
       "type": "piechart"
     },
     {
@@ -261,10 +336,56 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tentativi di login totali"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Login con successo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Login senza successo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 11,
+        "h": 10,
         "w": 24,
         "x": 0,
         "y": 8
@@ -295,7 +416,7 @@
           "expr": "login_attempts{instance=\"backend:8000\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "legendFormat": "__auto",
+          "legendFormat": "Tentativi di login totali",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -312,7 +433,7 @@
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Login con successo",
           "range": true,
           "refId": "B",
           "useBackend": false
@@ -329,7 +450,7 @@
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Login senza successo",
           "range": true,
           "refId": "C",
           "useBackend": false
@@ -351,7 +472,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 18
       },
       "id": 4,
       "options": {
@@ -374,7 +495,7 @@
           },
           "direction": "backward",
           "editorMode": "builder",
-          "expr": "{container=\"/backend\"} |= `JWT issued` or `Login attempt` or `Client authenticated` or `Invalid login payload`",
+          "expr": "{container=\"/backend\"} | json tag=\"xD\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -398,5 +519,5 @@
   "timezone": "browser",
   "title": "Login dashboard",
   "uid": "efrhfrd8sm22oa",
-  "version": 1
+  "version": 3
 }
