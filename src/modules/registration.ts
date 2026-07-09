@@ -55,6 +55,7 @@ router.post("/client", async(req, res) => {
         await client.save();
 
         log.info({ reqId }, "Client registered");
+        registeredClients.inc();
         res.sendStatus(201);
     } catch (e) {
         // Nel caso non riesca ad accedere al body oppure al fare il trim alle opzioni, allora
