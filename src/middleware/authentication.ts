@@ -1,5 +1,6 @@
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import type { Types } from "mongoose";
+import { activeUsers } from "../modules/prometheusClient.js";
 import express from "express";
 
 export interface AuthenticatedRequest extends express.Request{
@@ -11,6 +12,42 @@ export interface JwtCustomPayload extends JwtPayload{
     email: string,
     username: string,
     client: boolean
+}
+
+class User {
+    email: string;
+    timeout: NodeJS.Timeout;
+
+    constructor(email: string) {
+        activeUsers.inc();
+
+        this.email = email;
+        this.timeout = setTimeout(() => {
+            users = users.filter(e => {
+                return e != this;
+            });
+            activeUsers.dec();
+        }, 5 * 60 * 1000); // 5 minutes timeout
+    }
+
+    resetTimeout() {
+        this.timeout.refresh();
+    }
+}
+
+let users: User[] = [];
+
+// Gli utenti attivi sono differenziati per email e non per token
+function checkActiveUserStatus(email: string) {
+    const user = users.find(e => {
+        return e.email == email;
+    });
+
+    if (!user) {
+        users.push(new User(email));
+    } else {
+        user.resetTimeout();
+    }
 }
 
 export const clientOnly = (req: express.Request, res: express.Response, next: () => void) => {
@@ -58,6 +95,7 @@ export const tokenChecker = (req: express.Request, res: express.Response, next: 
         } else {
             // Eventuale set di parametri
             (req as AuthenticatedRequest).user = dec as JwtCustomPayload;
+            checkActiveUserStatus((dec as JwtCustomPayload).email);
             next();
         }
     });

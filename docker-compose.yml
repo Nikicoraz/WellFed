@@ -29,6 +29,7 @@ services:
             - mongo
             - loki
             - promtail
+            - prometheus
 
     mongo:
         image: mongo:latest
@@ -50,7 +51,6 @@ services:
         volumes:
             - ./observability/loki/loki-config.yaml:/etc/loki/loki-config.yaml
             
-
     promtail:
         image: grafana/promtail:latest
         container_name: promtail
@@ -70,3 +70,12 @@ services:
             - "3000:3000"
         depends_on:
             - loki
+            - prometheus
+
+    prometheus:
+        image: prom/prometheus
+        container_name: prometheus
+        ports:
+            - 9090:9090
+        volumes:
+            - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
