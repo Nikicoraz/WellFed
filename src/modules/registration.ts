@@ -13,7 +13,7 @@ const partitaIVARegex = /(IT)? ?\d{11}/;
 const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*\-_]).{8,40}$/;
 
 const log = logger.child({
-    tags: ["registration"]
+    scope: "registration"
 });
 
 router.post("/client", async(req, res) => {

@@ -7,7 +7,7 @@ import { logger } from "./logger.js";
 const router = express.Router();
 
 const log = logger.child({
-    tags: ["search"]
+    scope: "search"
 });
 
 enum SearchFilter{

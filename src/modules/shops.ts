@@ -8,7 +8,7 @@ const router = express.Router();
 const imagePath = "/public/images/";
 
 const log = logger.child({
-    tags: ["shops"]
+    scope: "shops"
 });
 
 router.get("", async(req, res) => {

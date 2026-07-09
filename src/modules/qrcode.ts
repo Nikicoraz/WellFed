@@ -15,7 +15,7 @@ import qrcode from "qrcode";
 const router = express.Router();
 
 const log = logger.child({
-    tags: ["qrcode"]
+    scope: "qrcode"
 });
 
 enum QRTypes {
