@@ -7,6 +7,10 @@ import { logger } from "./logger.js";
 
 const router = express.Router();
 
+const log = logger.child({
+    tags: ["notification"]
+});
+
 export async function sendNotification(shopLink: string, title: string, message: string, clientID: Types.ObjectId) {
     const newNotification = new Notification({
         shopLink: shopLink,
@@ -38,7 +42,7 @@ router.get("/", clientOnly,  async(req, res) => {
             return;
         }
     
-        logger.debug({ reqId, userId: areq.id }, "Fetching notifications");
+        log.debug({ reqId, userId: areq.id }, "Fetching notifications");
         
         const notifications = user.notifications;
     
@@ -46,7 +50,7 @@ router.get("/", clientOnly,  async(req, res) => {
         for (const clientNotification of notifications) {
             const n = await Notification.findById(clientNotification.notification.toString());
             if (!n) {
-                logger.warn({ reqId, notificationId: clientNotification.notification }, "Missing notification reference");
+                log.warn({ reqId, notificationId: clientNotification.notification }, "Missing notification reference");
                 return;
             }
     
@@ -59,11 +63,11 @@ router.get("/", clientOnly,  async(req, res) => {
             });
         }
 
-        logger.info({ userId: areq.id, count: ret.length }, "Notification fetched");
+        log.info({ userId: areq.id, count: ret.length }, "Notification fetched");
 
         res.json(ret);
     } catch (e) {
-        logger.error({ err: e }, "Notification GET failed");
+        log.error({ err: e }, "Notification GET failed");
         res.sendStatus(500);
     }
 });
@@ -85,15 +89,15 @@ router.patch("/:id", clientOnly, async(req, res) => {
 
         // Non ha aggiornato niente
         if (result.matchedCount == 0) {
-            logger.warn({ reqId, notificationID }, "Notification not found for update");
+            log.warn({ reqId, notificationID }, "Notification not found for update");
             res.sendStatus(404);
             return;
         }
 
-        logger.info({ reqId, userId: areq.id, notificationID }, "Notification marked viewed");
+        log.info({ reqId, userId: areq.id, notificationID }, "Notification marked viewed");
         res.sendStatus(200);
     } catch (e) {
-        logger.error({ reqId, err: e }, "Notification PATCH failed");
+        log.error({ reqId, err: e }, "Notification PATCH failed");
         res.sendStatus(500);
     }
 
@@ -115,7 +119,7 @@ router.delete("/:id", clientOnly, async(req, res) => {
 
         // Non ha aggiornato niente
         if (result.matchedCount == 0) {
-            logger.warn({ reqId, notificationId: notificationID, userId: areq.id }, "Notification delete not matched");
+            log.warn({ reqId, notificationId: notificationID, userId: areq.id }, "Notification delete not matched");
             res.sendStatus(404);
             return;
         }
@@ -127,11 +131,11 @@ router.delete("/:id", clientOnly, async(req, res) => {
         // Non ci sono più riferimenti alla notifica
         if (!check) {
             await Notification.findByIdAndDelete(notificationID);
-            logger.debug({ reqId, notificationId: notificationID }, "Orphan notification deleted");
+            log.debug({ reqId, notificationId: notificationID }, "Orphan notification deleted");
         }
         res.sendStatus(200);
     } catch (e) {
-        logger.error({ reqId, err: e }, "Notification DELETE failed");
+        log.error({ reqId, err: e }, "Notification DELETE failed");
         res.sendStatus(500);
     }
 

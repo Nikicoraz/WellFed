@@ -7,6 +7,10 @@ import { logger } from "./logger.js";
 
 const router = express.Router();
 
+const log = logger.child({
+    tags: ["transaction"]
+});
+
 export interface TransactionItems {
     products: {
         product: Types.ObjectId,
@@ -48,7 +52,7 @@ router.get("/", async (req, res) => {
         const areq: AuthenticatedRequest = req as AuthenticatedRequest;
         const userId = areq.user.id;
 
-        logger.info({ reqId, userId }, "Transaction history request");
+        log.info({ reqId, userId }, "Transaction history request");
 
         const search = await Transaction.find({
             $or: [
@@ -57,7 +61,7 @@ router.get("/", async (req, res) => {
             ]
         });
 
-        logger.debug({ reqId, userId, count: search.length }, "Transaction fetched from DB");
+        log.debug({ reqId, userId, count: search.length }, "Transaction fetched from DB");
         
         const userType: Entities = areq.user.client ? Entities.Client : Entities.Merchant;
         const otherEntity = userType == Entities.Client ? Entities.Merchant : Entities.Client;
@@ -95,11 +99,11 @@ router.get("/", async (req, res) => {
             };
         });
 
-        logger.info({ reqId, userId, returned: result.length }, "Transaction history returned");
+        log.info({ reqId, userId, returned: result.length }, "Transaction history returned");
         
         res.json(result);
     } catch (e) {
-        logger.error({ reqId, err: e }, "Transaction history failed");
+        log.error({ reqId, err: e }, "Transaction history failed");
         res.sendStatus(500);
     }
 });
