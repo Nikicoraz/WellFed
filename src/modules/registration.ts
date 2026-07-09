@@ -54,6 +54,7 @@ router.post("/client", async(req, res) => {
 
         await client.save();
 
+        registeredClients.inc();
         log.info({ reqId }, "Client registered");
         res.sendStatus(201);
     } catch (e) {
