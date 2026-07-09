@@ -6,7 +6,7 @@ import { logger } from "./logger.js";
 const router = express.Router();
 
 const log = logger.child({
-    tags: ["client"]
+    scope: "client"
 });
 
 router.get("/", clientOnly, async(req, res) => {

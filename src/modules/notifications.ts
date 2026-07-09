@@ -8,7 +8,7 @@ import { logger } from "./logger.js";
 const router = express.Router();
 
 const log = logger.child({
-    tags: ["notification"]
+    scope: "notification"
 });
 
 export async function sendNotification(shopLink: string, title: string, message: string, clientID: Types.ObjectId) {

@@ -9,7 +9,7 @@ import { shopOwnerOnly } from "../middleware/authentication.js";
 const router = express.Router();
 
 const log = logger.child({
-    tags: ["shopsAuth"]
+    scope: "shopsAuth"
 });
 
 router.post("/:shopID/products", shopOwnerOnly, imageUtil.uploadImage('products').single('image'), async (req, res) => {

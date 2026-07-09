@@ -14,7 +14,7 @@ const simpleEmailRegex = /.+(\..+)?@.+\..{2,3}/;
 const tokenOptions: SignOptions = {expiresIn: 86400};
 
 const log = logger.child({
-    tags: ["login"]
+    scope: "login"
 });
 
 router.post("", async(req, res) => {
