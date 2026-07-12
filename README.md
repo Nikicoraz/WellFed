@@ -35,6 +35,11 @@ docker compose up
 ```
 si possono configurare le variabili d'ambiente modificando il file docker-compose.yml
 
+Se si vuole avviare anche il simulatore di traffico si può eseguire il seguente comando:
+```
+docker compose --profile dev up
+```
+
 ## Post-installazione
 Una volta avviato il servizio utilizzando uno dei due metodi descritti sopra, se sono stati utilizzati i parametri di default, si può accedere al backend all'indirizzo `http://127.0.0.1:8000` e al frontend all'indirizzo `http://127.0.0.1:5173`
 
