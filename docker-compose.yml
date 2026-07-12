@@ -79,3 +79,15 @@ services:
             - 9090:9090
         volumes:
             - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    # Abiltitato solo con il profilo dev
+    simulator:
+        build:
+            context: ./traffic-simulator
+        profiles:
+            - dev
+        depends_on:
+            - backend
+        ports:
+            - 8050:8050
+            
