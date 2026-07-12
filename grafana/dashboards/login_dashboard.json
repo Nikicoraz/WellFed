@@ -26,7 +26,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "This module tracks login attempts, successful login and login errors over time",
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -250,7 +250,7 @@
         {
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "login_errors{instance=\"backend:8000\"}",
+          "expr": "login_success{instance=\"backend:8000\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "Login con successo",
@@ -265,7 +265,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "login_success{instance=\"backend:8000\"}",
+          "expr": "login_errors{instance=\"backend:8000\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -456,7 +456,7 @@
           "useBackend": false
         }
       ],
-      "title": "Panel Title",
+      "title": "Login Data",
       "type": "timeseries"
     },
     {
@@ -495,12 +495,12 @@
           },
           "direction": "backward",
           "editorMode": "builder",
-          "expr": "{container=\"/backend\"} | json tag=\"xD\"",
+          "expr": "{container=\"/backend\"} | json | scope = `login`",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Panel Title",
+      "title": "Login logs",
       "type": "logs"
     }
   ],
@@ -519,5 +519,5 @@
   "timezone": "browser",
   "title": "Login dashboard",
   "uid": "efrhfrd8sm22oa",
-  "version": 3
+  "version": 1
 }
