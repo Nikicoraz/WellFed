@@ -89,6 +89,7 @@ services:
     # Abiltitato solo con il profilo dev
     simulator:
         build:
+            network: host
             context: ./traffic-simulator
         profiles:
             - dev
