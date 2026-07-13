@@ -89,11 +89,15 @@ services:
     # Abiltitato solo con il profilo dev
     simulator:
         build:
+            network: host
             context: ./traffic-simulator
+        container_name: simulator
         profiles:
             - dev
         depends_on:
             - backend
         ports:
             - 8050:8050
+        environment:
+            - BACKEND_URL=http://backend:8000/api/v1
             

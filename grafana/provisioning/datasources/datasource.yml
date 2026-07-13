@@ -14,6 +14,3 @@ datasources:
     type: loki
     access: proxy
     url: http://loki:3100
-    jsonData:
-      # Opzionale: puoi configurare qui la versione massima delle linee di log o altre impostazioni di Loki
-      maxLines: 1000
